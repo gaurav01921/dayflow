@@ -16,16 +16,24 @@ interface StatCardProps {
   title: string
   value: string | number
   hint?: string
-  icon: LucideIcon
+  icon?: LucideIcon
   tone?: keyof typeof TONES
 }
 
-export function StatCard({ title, value, hint, icon: Icon, tone = "primary" }: StatCardProps) {
+export function StatCard({
+  title,
+  value,
+  hint,
+  icon: Icon,
+  tone = "primary",
+}: StatCardProps) {
   return (
     <Card className="gap-0 py-0">
       <CardContent className="flex items-center gap-4 px-5 py-5">
         <div className={cn("flex size-10 shrink-0 items-center justify-center rounded-lg", TONES[tone])}>
-          <Icon className="size-5" />
+          {Icon ? (
+            <Icon className="size-5" />
+          ) : null}
         </div>
         <div className="min-w-0">
           <p className="text-muted-foreground truncate text-xs font-medium tracking-wide uppercase">

@@ -74,7 +74,7 @@ function App() {
               </a>
             </li>
             <li>
-              <a href="https://chat.vite.dev/" target="_blank">
+              <a href="https://chat.vitejs.dev/" target="_blank">
                 <svg
                   className="button-icon"
                   role="presentation"

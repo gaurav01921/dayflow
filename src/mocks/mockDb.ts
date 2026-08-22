@@ -218,8 +218,8 @@ function seedAttendance(employeeIds: string[]): AttendanceRecord[] {
   for (let offset = 14; offset >= 1; offset--) {
     const date = addDays(TODAY, -offset)
     if (isWeekend(date)) continue
-    employeeIds.forEach((empId, idx) => {
-      const roll = (idx * 7 + offset * 3) % 17
+employeeIds.forEach((empId, _idx) => {
+      const roll = (_idx * 7 + offset * 3) % 17
       let status: AttendanceRecord["status"] = "present"
       if (roll === 3) status = "half-day"
       else if (roll === 8) status = "absent"
@@ -229,7 +229,7 @@ function seedAttendance(employeeIds: string[]): AttendanceRecord[] {
         id: `att-${empId}-${toISODate(date)}`,
         employeeId: empId,
         date: toISODate(date),
-        checkIn: checkedIn ? new Date(date.setHours(9, 2 + idx)).toISOString() : null,
+        checkIn: checkedIn ? new Date(date.setHours(9, 2 + _idx)).toISOString() : null,
         checkOut: checkedIn ? new Date(date.setHours(status === "half-day" ? 13 : 17, 30)).toISOString() : null,
         status,
         hoursWorked: status === "present" ? 8 : status === "half-day" ? 4 : 0,
@@ -239,7 +239,7 @@ function seedAttendance(employeeIds: string[]): AttendanceRecord[] {
   // Today: everyone present except demo employee (so check-in works live in the demo).
   const todayISO = toISODate(TODAY)
   const now = new Date()
-  employeeIds.forEach((empId, idx) => {
+  employeeIds.forEach((empId) => {
     if (empId === "usr-emp-1") return
     records.push({
       id: `att-${empId}-${todayISO}`,

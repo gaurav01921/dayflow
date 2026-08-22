@@ -132,9 +132,7 @@ export function SignUpForm() {
               />
               {errors.password ? (
                 <ul className="text-destructive list-inside list-disc text-xs">
-                  {errors.password.message.split(".").filter(Boolean).map((m) => (
-                    <li key={m.trim()}>{m.trim()}.</li>
-                  ))}
+                  <li>{errors.password?.message ?? "Password does not match requirements."}</li>
                 </ul>
               ) : (
                 <p className="text-muted-foreground text-xs">
