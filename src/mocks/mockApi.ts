@@ -1,4 +1,5 @@
 import { ApiError } from "@/lib/api-error"
+import { useAuthStore } from "@/stores/authStore"
 import {
   addDays,
   countWeekdays,
@@ -40,6 +41,12 @@ function delay<T>(value: T): Promise<T> {
 }
 
 function currentUser(): User {
+  if (!session) {
+    const storeUser = useAuthStore.getState().user
+    if (storeUser?.id) {
+      session = { userId: storeUser.id }
+    }
+  }
   if (!session) {
     throw new ApiError("You must be signed in.", "UNAUTHORIZED")
   }
@@ -400,6 +407,15 @@ export const mockApi = {
     rows.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     return delay(rows.map((n) => ({ ...n })))
   },
+
+  async markNotificationAsRead(id: string): Promise<NotificationItem> {
+    const me = currentUser()
+    const item = mockDb.notifications.find((n) => n.id === id && n.userId === me.id)
+    if (!item) throw new ApiError("Notification not found.", "NOT_FOUND")
+    item.read = true
+    return delay({ ...item })
+  },
+
 
   // ---------- reports ----------
   async dashboardStats(): Promise<DashboardStats> {
