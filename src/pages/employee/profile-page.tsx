@@ -57,7 +57,7 @@ import { formatCurrency, formatDate } from "@/lib/utils"
 import { authService } from "@/services/authService"
 import { employeeService } from "@/services/employeeService"
 import { payrollService } from "@/services/payrollService"
-import { isManagerRole, useAuthStore } from "@/stores/authStore"
+import { useAuthStore } from "@/stores/authStore"
 import type { Payroll } from "@/types/api"
 
 const contactSchema = z.object({
@@ -253,23 +253,23 @@ export function EmployeeProfilePage() {
   const fullName = `${employee.firstName} ${employee.lastName}`
   const initials = `${employee.firstName?.[0] ?? ""}${employee.lastName?.[0] ?? ""}`.toUpperCase()
 
-  // Use the persisted payroll structure so the profile and payroll use one source of truth.
-  const monthlyWage = latestPayroll?.salaryStructure?.monthlyWage ?? latestPayroll?.baseSalary ?? 5000
+  // Base wage from payroll or fallback calculation
+  const monthlyWage = latestPayroll?.baseSalary ?? 5000
   const yearlyWage = monthlyWage * 12
-  const salary = latestPayroll?.salaryStructure ?? payrollService.calculateSalary({ monthlyWage })
-  const {
-    basicSalary,
-    hra,
-    standardAllowance,
-    performanceBonus,
-    lta,
-    fixedAllowance,
-    grossSalary: totalGross,
-    professionalTax,
-    employeePf: providentFund,
-    totalDeductions,
-  } = salary
-  const netWage = latestPayroll?.netPay ?? salary.netSalary
+
+  // Computed salary components
+  const basicSalary = latestPayroll?.baseSalary ?? Math.round(monthlyWage * 0.5)
+  const hra = latestPayroll?.allowances ?? Math.round(monthlyWage * 0.2)
+  const standardAllowance = 200
+  const performanceBonus = latestPayroll?.bonus ?? 300
+  const lta = 150
+  const fixedAllowance = 150
+
+  const professionalTax = 200
+  const providentFund = latestPayroll?.deductions ?? Math.round(basicSalary * 0.12)
+  const totalDeductions = professionalTax + providentFund
+  const totalGross = basicSalary + hra + standardAllowance + performanceBonus + lta + fixedAllowance
+  const netWage = latestPayroll?.netPay ?? (totalGross - totalDeductions)
 
   return (
     <div className="space-y-6">
@@ -368,7 +368,7 @@ export function EmployeeProfilePage() {
 
       {/* 4-Tab Navigation: Resume, Private Info, Salary Info, Security */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className={`grid w-full max-w-xl h-10 p-1 ${isManagerRole(currentUser?.role) ? "grid-cols-4" : "grid-cols-3"}`}>
+        <TabsList className="grid w-full grid-cols-4 max-w-xl h-10 p-1">
           <TabsTrigger value="resume" className="text-xs sm:text-sm font-medium">
             <User className="size-4 mr-1.5 hidden sm:inline" />
             Resume
@@ -377,12 +377,10 @@ export function EmployeeProfilePage() {
             <ShieldCheck className="size-4 mr-1.5 hidden sm:inline" />
             Private Info
           </TabsTrigger>
-          {isManagerRole(currentUser?.role) ? (
-            <TabsTrigger value="salary" className="text-xs sm:text-sm font-medium">
-              <Banknote className="size-4 mr-1.5 hidden sm:inline" />
-              Salary Info
-            </TabsTrigger>
-          ) : null}
+          <TabsTrigger value="salary" className="text-xs sm:text-sm font-medium">
+            <Banknote className="size-4 mr-1.5 hidden sm:inline" />
+            Salary Info
+          </TabsTrigger>
           <TabsTrigger value="security" className="text-xs sm:text-sm font-medium">
             <KeyRound className="size-4 mr-1.5 hidden sm:inline" />
             Security
@@ -745,12 +743,8 @@ export function EmployeeProfilePage() {
             <Card className="border-border/80 shadow-xs">
               <CardContent className="p-4">
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Work Schedule</p>
-                <p className="text-2xl font-bold tracking-tight text-foreground mt-1">
-                  {employee.workingSchedule?.workingDaysPerWeek ?? 5} Days / Wk
-                </p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
-                  {employee.workingSchedule?.expectedHoursPerDay ?? 8} Hours / Day standard
-                </p>
+                <p className="text-2xl font-bold tracking-tight text-foreground mt-1">5 Days / Wk</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">8 Hours / Day standard</p>
               </CardContent>
             </Card>
 
