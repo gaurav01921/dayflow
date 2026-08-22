@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
+import { queryKeys } from "@/hooks/queryKeys"
 import { payrollService } from "@/services/payrollService"
 import type { PayrollUpdate } from "@/types/api"
 
@@ -7,7 +8,7 @@ export function usePayroll(employeeId?: string) {
   const queryClient = useQueryClient()
 
   const payrollQuery = useQuery({
-    queryKey: ["payroll", employeeId ?? "me"],
+    queryKey: queryKeys.payroll.detail(employeeId),
     queryFn: () => payrollService.list(employeeId),
   })
 
@@ -15,9 +16,9 @@ export function usePayroll(employeeId?: string) {
     mutationFn: ({ targetEmployeeId, patch }: { targetEmployeeId: string; patch: PayrollUpdate }) =>
       payrollService.update(targetEmployeeId, patch),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["payroll"] })
-      void queryClient.invalidateQueries({ queryKey: ["reports"] })
-      void queryClient.invalidateQueries({ queryKey: ["notifications"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.payroll.all })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.reports.all })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all })
     },
   })
 
