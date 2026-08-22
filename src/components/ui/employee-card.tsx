@@ -1,4 +1,5 @@
-import { Building2, ChevronRight, Mail, Phone } from "lucide-react"
+import { Building2, ChevronRight, Mail, Phone, PlaneTakeoff } from "lucide-react"
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
@@ -21,54 +22,45 @@ export function EmployeeCard({
   const fullName = `${employee.firstName} ${employee.lastName}`
   const initials = `${employee.firstName?.[0] ?? ""}${employee.lastName?.[0] ?? ""}`.toUpperCase()
 
-  const statusConfig = {
-    present: {
-      label: "Present",
-      dotClass: "bg-success animate-pulse",
-      badgeVariant: "success" as const,
-    },
-    absent: {
-      label: "Absent",
-      dotClass: "bg-destructive",
-      badgeVariant: "destructive" as const,
-    },
-    "half-day": {
-      label: "Half Day",
-      dotClass: "bg-warning",
-      badgeVariant: "warning" as const,
-    },
-    leave: {
-      label: "On Leave",
-      dotClass: "bg-info",
-      badgeVariant: "info" as const,
-    },
-  }[attendanceStatus] ?? {
-    label: "Present",
-    dotClass: "bg-success",
-    badgeVariant: "success" as const,
-  }
-
   return (
     <Card
       onClick={onClick}
       className={cn(
-        "group relative flex flex-col justify-between overflow-hidden border-border/80 p-5 transition-all duration-200 hover:-translate-y-1 hover:border-primary/50 hover:shadow-md",
-        onClick && "cursor-pointer",
+        "group relative flex flex-col justify-between overflow-hidden border-border/80 p-5 transition-all duration-200 hover:-translate-y-1 hover:border-primary/50 hover:shadow-md cursor-pointer",
         className
       )}
     >
-      {/* Top row: Status indicator badge in top right */}
+      {/* Top row: Employee ID & Top-Right Attendance Status Indicator */}
       <div className="flex items-start justify-between gap-2">
         <span className="font-mono text-[11px] font-semibold text-muted-foreground bg-muted/80 px-2 py-0.5 rounded">
           {employee.employeeCode}
         </span>
-        <Badge
-          variant={statusConfig.badgeVariant}
-          className="flex items-center gap-1.5 py-0.5 px-2 text-[11px] font-medium"
-        >
-          <span className={cn("size-1.5 rounded-full", statusConfig.dotClass)} />
-          {statusConfig.label}
-        </Badge>
+
+        {/* Status Indicator according to reference rules:
+            - Green dot (🟢) = Present
+            - Airplane icon (✈️) = On Leave
+            - Yellow dot (🟡) = Absent */}
+        {attendanceStatus === "leave" ? (
+          <Badge variant="info" className="flex items-center gap-1 py-0.5 px-2 text-[11px] font-medium bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20">
+            <PlaneTakeoff className="size-3" />
+            <span>On Leave</span>
+          </Badge>
+        ) : attendanceStatus === "absent" ? (
+          <Badge variant="warning" className="flex items-center gap-1.5 py-0.5 px-2 text-[11px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20">
+            <span className="size-2 rounded-full bg-amber-500" />
+            <span>Absent</span>
+          </Badge>
+        ) : attendanceStatus === "half-day" ? (
+          <Badge variant="warning" className="flex items-center gap-1.5 py-0.5 px-2 text-[11px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20">
+            <span className="size-2 rounded-full bg-amber-400" />
+            <span>Half Day</span>
+          </Badge>
+        ) : (
+          <Badge variant="success" className="flex items-center gap-1.5 py-0.5 px-2 text-[11px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+            <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Present</span>
+          </Badge>
+        )}
       </div>
 
       {/* Center content: Avatar and names */}
@@ -109,8 +101,8 @@ export function EmployeeCard({
           ) : null}
         </div>
 
-        <div className="flex items-center gap-0.5 text-primary text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-          <span>View</span>
+        <div className="flex items-center gap-0.5 text-primary text-xs font-medium opacity-80 group-hover:opacity-100 transition-opacity">
+          <span>View Profile</span>
           <ChevronRight className="size-3.5" />
         </div>
       </div>

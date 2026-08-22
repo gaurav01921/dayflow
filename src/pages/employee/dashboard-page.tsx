@@ -21,7 +21,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { toISODate } from "@/mocks/mockDb"
+import { toISODate } from "@/lib/utils"
 import { attendanceService } from "@/services/attendanceService"
 import { leaveService } from "@/services/leaveService"
 import { notificationService } from "@/services/notificationService"

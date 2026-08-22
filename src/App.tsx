@@ -46,7 +46,7 @@ function RoleHomeRedirect() {
   const user = useAuthStore((s) => s.user)
   if (!user) return <Navigate to="/login" replace />
   if (user.mustChangePassword) return <Navigate to="/change-password" replace />
-  return <Navigate to={isManagerRole(user.role) ? "/hr/dashboard" : "/employee/dashboard"} replace />
+  return <Navigate to={isManagerRole(user.role) ? "/hr/dashboard" : "/employee/employees"} replace />
 }
 
 export function App() {

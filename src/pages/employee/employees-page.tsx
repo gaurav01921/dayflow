@@ -7,12 +7,16 @@ import { PageHeader } from "@/components/shared/page-header"
 import { EmployeeCard } from "@/components/ui/employee-card"
 import { SearchBar } from "@/components/ui/search-bar"
 import { Skeleton } from "@/components/ui/skeleton"
+import { AttendanceTracker } from "@/features/attendance/attendance-tracker"
 import { attendanceService } from "@/services/attendanceService"
 import { employeeService } from "@/services/employeeService"
+import { leaveService } from "@/services/leaveService"
+import { useAuthStore } from "@/stores/authStore"
 import type { AttendanceStatus, Employee } from "@/types/api"
 
 export function EmployeesDirectoryPage() {
   const navigate = useNavigate()
+  const currentUser = useAuthStore((s) => s.user)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedDept, setSelectedDept] = useState<string>("all")
   const [selectedStatus, setSelectedStatus] = useState<string>("all")
@@ -27,17 +31,45 @@ export function EmployeesDirectoryPage() {
     queryFn: () => attendanceService.list(),
   })
 
-  // Map employee ID to today's attendance status
+  const { data: leaves = [] } = useQuery({
+    queryKey: ["leaves", "all"],
+    queryFn: () => leaveService.list(),
+  })
+
+  const todayISO = useMemo(() => new Date().toISOString().slice(0, 10), [])
+  const myTodayRecord = useMemo(
+    () => attendance.find((r) => r.employeeId === currentUser?.id && r.date === todayISO),
+    [attendance, currentUser, todayISO]
+  )
+
+  // Map employee ID to today's attendance status:
+  // Approved leave today -> "leave" (Airplane ✈️)
+  // Attendance record today -> status (e.g. "present" 🟢)
+  // Otherwise -> "absent" (Yellow 🟡)
   const attendanceMap = useMemo(() => {
     const todayISO = new Date().toISOString().slice(0, 10)
     const map = new Map<string, AttendanceStatus>()
+
+    // Check approved leaves for today
+    for (const leave of leaves) {
+      if (
+        leave.status === "approved" &&
+        leave.startDate <= todayISO &&
+        leave.endDate >= todayISO
+      ) {
+        map.set(leave.employeeId, "leave")
+      }
+    }
+
+    // Check today's attendance records
     for (const record of attendance) {
-      if (record.date === todayISO) {
+      if (record.date === todayISO && record.checkIn) {
         map.set(record.employeeId, record.status)
       }
     }
+
     return map
-  }, [attendance])
+  }, [attendance, leaves])
 
   // Extract unique departments for filtering
   const departments = useMemo(() => {
@@ -60,7 +92,7 @@ export function EmployeesDirectoryPage() {
 
       const matchesDept = selectedDept === "all" || emp.department === selectedDept
 
-      const status = attendanceMap.get(emp.id) ?? "present"
+      const status = attendanceMap.get(emp.id) ?? "absent"
       const matchesStatus = selectedStatus === "all" || status === selectedStatus
 
       return matchesSearch && matchesDept && matchesStatus
@@ -73,6 +105,9 @@ export function EmployeesDirectoryPage() {
         title="Employee Directory"
         description="Browse all team members, view designations, and live in-office status."
       />
+
+      {/* Attendance Check In / Check Out Card */}
+      <AttendanceTracker todayRecord={myTodayRecord} />
 
       {/* Filter and Search Bar Toolbar */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -174,7 +209,7 @@ export function EmployeesDirectoryPage() {
             <EmployeeCard
               key={employee.id}
               employee={employee}
-              attendanceStatus={attendanceMap.get(employee.id) ?? "present"}
+              attendanceStatus={attendanceMap.get(employee.id) ?? "absent"}
               onClick={() => navigate(`/employee/profile/${employee.id}`)}
             />
           ))}
