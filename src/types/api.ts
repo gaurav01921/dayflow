@@ -45,6 +45,7 @@ export interface Employee {
   address: string
   avatarUrl?: string
   documents: DocumentFile[]
+  workingSchedule?: WorkingSchedule
 }
 
 export interface EmployeeUpdate {
@@ -110,6 +111,8 @@ export interface Payroll {
   deductions: number
   netPay: number
   paymentDate: string
+  salaryStructure?: SalaryStructure
+  payableDaysDetails?: PayableDaysResult
 }
 
 export interface PayrollUpdate {
@@ -117,6 +120,7 @@ export interface PayrollUpdate {
   allowances?: number
   bonus?: number
   deductions?: number
+  salaryConfig?: SalaryCalculationInput
 }
 
 export interface NotificationItem {
@@ -199,4 +203,83 @@ export interface CreateEmployeeResult {
   user: User
   loginId: string
   temporaryPassword: string
+}
+
+// ── Salary Calculation Engine Types ──
+
+export interface SalaryCalculationInput {
+  monthlyWage: number
+  basicPercentage?: number        // default 50
+  hraPercentage?: number          // default 50 (of Basic)
+  standardAllowance?: number      // default 4167
+  performanceBonusPercentage?: number // default 8.33 (of Basic)
+  ltaPercentage?: number          // default 8.33 (of Basic)
+  employeePfRate?: number         // default 12 (of Basic)
+  employerPfRate?: number         // default 12 (of Basic)
+  professionalTax?: number         // default 200
+}
+
+export interface SalaryStructure {
+  monthlyWage: number
+  basicSalary: number
+  hra: number
+  standardAllowance: number
+  performanceBonus: number
+  lta: number
+  fixedAllowance: number
+  grossSalary: number
+  employeePf: number
+  employerPf: number
+  professionalTax: number
+  totalDeductions: number
+  netSalary: number
+}
+
+// ── Payable Days Types ──
+
+export interface PayableDaysInput {
+  workingDays: number
+  presentDays: number
+  paidLeaveDays: number
+  unpaidLeaveDays: number
+  missingAttendanceDays: number
+}
+
+export interface PayableDaysResult {
+  workingDays: number
+  presentDays: number
+  paidLeaveDays: number
+  unpaidLeaveDays: number
+  missingAttendanceDays: number
+  payableDays: number
+  unpaidDays: number
+  missingDays: number
+  payableRatio: number
+}
+
+// ── Full Payroll Calculation Types ──
+
+export interface FullPayrollCalculationInput {
+  monthlyWage: number
+  workingDays: number
+  presentDays: number
+  paidLeaveDays: number
+  unpaidLeaveDays: number
+  missingAttendanceDays: number
+  salaryConfig?: Omit<SalaryCalculationInput, "monthlyWage">
+}
+
+export interface FullPayrollCalculationResult {
+  salaryStructure: SalaryStructure
+  payableDaysResult: PayableDaysResult
+  proratedGrossSalary: number
+  proratedNetSalary: number
+}
+
+// ── Working Schedule Model ──
+
+export interface WorkingSchedule {
+  workingDaysPerWeek: number    // default 5
+  expectedHoursPerDay: number   // default 8
+  breakMinutes: number          // default 60
 }

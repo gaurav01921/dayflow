@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import type { ReactNode } from "react"
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom"
+import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router-dom"
 import { Toaster } from "sonner"
 
 import { AppShell } from "@/components/layout/app-shell"
@@ -20,7 +20,7 @@ import { HrLeavesPage } from "@/pages/hr/leaves-page"
 import { HrPayrollPage } from "@/pages/hr/payroll-page"
 import { HrReportsPage } from "@/pages/hr/reports-page"
 import { MyLeavesPage } from "@/features/leave/my-leaves"
-import { useAuthStore } from "@/stores/authStore"
+import { isManagerRole, useAuthStore } from "@/stores/authStore"
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -42,11 +42,19 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
   return <>{children}</>
 }
 
+function ManagerRoute({ children }: { children: ReactNode }) {
+  const user = useAuthStore((s) => s.user)
+  if (!isManagerRole(user?.role)) {
+    return <Navigate to="/employee/employees" replace />
+  }
+  return <>{children}</>
+}
+
 function RoleHomeRedirect() {
   const user = useAuthStore((s) => s.user)
   if (!user) return <Navigate to="/login" replace />
   if (user.mustChangePassword) return <Navigate to="/change-password" replace />
-  return <Navigate to="/employee/employees" replace />
+  return <Navigate to={isManagerRole(user.role) ? "/hr/dashboard" : "/employee/employees"} replace />
 }
 
 export function App() {
@@ -83,14 +91,16 @@ export function App() {
             <Route path="/employee/payroll" element={<EmployeePayrollPage />} />
 
             {/* HR / Admin Portal */}
-            <Route path="/hr/dashboard" element={<HrDashboardPage />} />
-            <Route path="/hr/employees" element={<HrEmployeesPage />} />
-            <Route path="/hr/profile" element={<EmployeeProfilePage />} />
-            <Route path="/hr/profile/:id" element={<EmployeeProfilePage />} />
-            <Route path="/hr/attendance" element={<HrAttendancePage />} />
-            <Route path="/hr/leaves" element={<HrLeavesPage />} />
-            <Route path="/hr/payroll" element={<HrPayrollPage />} />
-            <Route path="/hr/reports" element={<HrReportsPage />} />
+            <Route element={<ManagerRoute><Outlet /></ManagerRoute>}>
+              <Route path="/hr/dashboard" element={<HrDashboardPage />} />
+              <Route path="/hr/employees" element={<HrEmployeesPage />} />
+              <Route path="/hr/profile" element={<EmployeeProfilePage />} />
+              <Route path="/hr/profile/:id" element={<EmployeeProfilePage />} />
+              <Route path="/hr/attendance" element={<HrAttendancePage />} />
+              <Route path="/hr/leaves" element={<HrLeavesPage />} />
+              <Route path="/hr/payroll" element={<HrPayrollPage />} />
+              <Route path="/hr/reports" element={<HrReportsPage />} />
+            </Route>
           </Route>
 
           {/* Fallback */}

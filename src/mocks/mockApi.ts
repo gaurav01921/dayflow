@@ -1,5 +1,9 @@
 import { ApiError } from "@/lib/api-error"
-import { calculateSalary } from "@/lib/payroll/index"
+import {
+  calculateFullPayroll,
+  calculateSalary,
+  summarizeAttendanceAndLeaves,
+} from "@/lib/payroll/index"
 import { useAuthStore } from "@/stores/authStore"
 import {
   addDays,
@@ -443,10 +447,49 @@ export const mockApi = {
     const me = currentUser()
     const employeeId =
       me.role === "employee" ? me.id : (employeeIdParam ?? me.id)
+    const month = toISODate(new Date()).slice(0, 7)
+    const today = toISODate(new Date())
     const rows = mockDb.payroll
       .filter((p) => p.employeeId === employeeId)
       .sort((a, b) => b.month.localeCompare(a.month))
-    return delay(rows.map((p) => ({ ...p })))
+      .map((payroll) => {
+        if (payroll.month !== month || !payroll.salaryStructure) {
+          return { ...payroll }
+        }
+
+        const attendance = mockDb.attendance.filter(
+          (record) =>
+            record.employeeId === payroll.employeeId &&
+            record.date.startsWith(month) &&
+            record.date <= today,
+        )
+        const leaves = mockDb.leaves
+          .filter(
+            (leave) =>
+              leave.employeeId === payroll.employeeId &&
+              leave.status === "approved" &&
+              leave.startDate <= today &&
+              leave.endDate.startsWith(month),
+          )
+          .map((leave) => ({ ...leave, endDate: leave.endDate > today ? today : leave.endDate }))
+        const workingDays = countWeekdays(`${month}-01`, today)
+        const payable = summarizeAttendanceAndLeaves(workingDays, attendance, leaves)
+        const calculated = calculateFullPayroll({
+          monthlyWage: payroll.salaryStructure.monthlyWage,
+          workingDays,
+          presentDays: payable.presentDays,
+          paidLeaveDays: payable.paidLeaveDays,
+          unpaidLeaveDays: payable.unpaidLeaveDays,
+          missingAttendanceDays: payable.missingAttendanceDays,
+        })
+
+        return {
+          ...payroll,
+          netPay: calculated.proratedNetSalary + payroll.bonus,
+          payableDaysDetails: calculated.payableDaysResult,
+        }
+      })
+    return delay(rows)
   },
 
   async updatePayroll(employeeId: string, patch: PayrollUpdate): Promise<Payroll> {
@@ -478,11 +521,19 @@ export const mockApi = {
       record.baseSalary = salaryStructure.basicSalary
       record.allowances =
         salaryStructure.hra + salaryStructure.standardAllowance + salaryStructure.fixedAllowance
-      record.bonus = patch.bonus ?? record.bonus ?? 0
+      record.bonus = Math.max(0, patch.bonus ?? record.bonus ?? 0)
       record.deductions = salaryStructure.totalDeductions
       record.netPay = salaryStructure.netSalary + record.bonus
     } else {
-      Object.assign(record, patch)
+      const baseSalary = Math.max(0, Math.round(patch.baseSalary ?? record.baseSalary))
+      const allowances = Math.max(0, Math.round(patch.allowances ?? record.allowances))
+      const bonus = Math.max(0, Math.round(patch.bonus ?? record.bonus))
+      const minimumDeductions = Math.round(baseSalary * 0.12) + 200
+      const deductions = Math.max(
+        minimumDeductions,
+        Math.round(patch.deductions ?? record.deductions),
+      )
+      Object.assign(record, { baseSalary, allowances, bonus, deductions })
       record.netPay =
         record.baseSalary + record.allowances + record.bonus - record.deductions
     }
