@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Agent & Workflow stored information
+.agents/
+docs/HACKATHON_GUIDE.md
+docs/WORKFLOW.md
