@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
+import { queryKeys } from "@/hooks/queryKeys"
 import { leaveService, type ListLeavesParams } from "@/services/leaveService"
 import type { LeaveCreateInput, LeaveReviewInput } from "@/types/api"
 
@@ -7,15 +8,16 @@ export function useLeaves(params: ListLeavesParams = {}) {
   const queryClient = useQueryClient()
 
   const leavesQuery = useQuery({
-    queryKey: ["leaves", params],
+    queryKey: queryKeys.leaves.list(params),
     queryFn: () => leaveService.list(params),
   })
 
   const createLeaveMutation = useMutation({
     mutationFn: (input: LeaveCreateInput) => leaveService.create(input),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["leaves"] })
-      void queryClient.invalidateQueries({ queryKey: ["notifications"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.leaves.all })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.reports.all })
     },
   })
 
@@ -23,10 +25,10 @@ export function useLeaves(params: ListLeavesParams = {}) {
     mutationFn: ({ id, input }: { id: string; input: LeaveReviewInput }) =>
       leaveService.review(id, input),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["leaves"] })
-      void queryClient.invalidateQueries({ queryKey: ["attendance"] })
-      void queryClient.invalidateQueries({ queryKey: ["reports"] })
-      void queryClient.invalidateQueries({ queryKey: ["notifications"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.leaves.all })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.attendance.all })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.reports.all })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all })
     },
   })
 

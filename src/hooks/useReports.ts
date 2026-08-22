@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query"
 
+import { queryKeys } from "@/hooks/queryKeys"
 import { reportService } from "@/services/reportService"
 
 export function useDashboardStats() {
   const query = useQuery({
-    queryKey: ["reports", "dashboard-stats"],
+    queryKey: queryKeys.reports.dashboardStats,
     queryFn: () => reportService.dashboardStats(),
   })
 
@@ -19,7 +20,7 @@ export function useDashboardStats() {
 
 export function useAttendanceReport(days = 14) {
   const query = useQuery({
-    queryKey: ["reports", "attendance", days],
+    queryKey: queryKeys.reports.attendance(days),
     queryFn: () => reportService.attendanceReport(days),
   })
 
@@ -34,7 +35,7 @@ export function useAttendanceReport(days = 14) {
 
 export function usePayrollReport() {
   const query = useQuery({
-    queryKey: ["reports", "payroll"],
+    queryKey: queryKeys.reports.payroll,
     queryFn: () => reportService.payrollReport(),
   })
 

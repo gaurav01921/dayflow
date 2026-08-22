@@ -1,8 +1,6 @@
 import { useMutation } from "@tanstack/react-query"
 
-import { mockApi } from "@/mocks/mockApi"
 import { authService } from "@/services/authService"
-import { USE_MOCKS } from "@/services/config"
 import { isManagerRole, useAuthStore } from "@/stores/authStore"
 import type { LoginInput, SignUpInput, VerifyEmailInput } from "@/types/api"
 
@@ -21,9 +19,6 @@ export function useAuth() {
     mutationFn: (input: LoginInput) => authService.login(input),
     onSuccess: ({ user, token }) => {
       setAuth(user, token)
-      if (USE_MOCKS) {
-        mockApi.syncSession(user.id)
-      }
     },
   })
 
@@ -39,9 +34,6 @@ export function useAuth() {
     try {
       await authService.logout()
     } finally {
-      if (USE_MOCKS) {
-        mockApi.syncSession(null)
-      }
       clear()
     }
   }
