@@ -124,3 +124,22 @@ The following UI files currently call services or Zustand directly instead of co
 
 ## 12. Remaining Core Logic Risks
 * **None**. Core Logic layer is completely tested, typed, and hardened.
+
+---
+
+## 13. Phase 2D Final Validation
+
+* **Authentication result**: VERIFIED (Login, signup, verify email, logout, role checks, and mock session recovery on reload pass cleanly).
+* **Attendance result**: VERIFIED (List, 30s polling, check-in, duplicate check-in rejection, check-out, and report invalidation pass).
+* **Leave result**: VERIFIED (List, leave creation, weekday duration calculation, HR review approval/rejection, attendance sync, and notification triggers pass).
+* **Payroll result**: VERIFIED (Read-only payslip listing, net pay calculation, HR salary updates, and notification triggers pass).
+* **Notification result**: VERIFIED (Polling listing, unread count badge, mark-as-read, and cache invalidation pass).
+* **Reports result**: VERIFIED (Dashboard stats, attendance report, and payroll report pass).
+* **Employee result**: VERIFIED (Employee list, single profile query, and profile update pass).
+* **Cross-domain workflow result**: VERIFIED (Leave approval -> attendance update -> notification push -> query invalidation chain functions end-to-end).
+* **Error contract result**: VERIFIED (`ApiError` instances with structured error codes preserved).
+* **Mock/real API result**: VERIFIED (`VITE_USE_MOCKS` toggle routes through services to `mockApi` or Axios cleanly).
+* **Build result**: PASS (`./node_modules/.bin/vite build` passed in 958ms).
+* **TypeScript result**: PASS (`./node_modules/.bin/tsc --noEmit` passed with 0 errors).
+* **Oxlint result**: PASS (`./node_modules/.bin/oxlint` passed on 79 files with 0 errors).
+* **Remaining M2 issues**: None. M2 Core Logic is complete, hardened, and ready for final team integration.
