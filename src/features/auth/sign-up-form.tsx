@@ -1,7 +1,8 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation } from "@tanstack/react-query"
+import { IdCard, Lock, Mail } from "lucide-react"
 import { useForm } from "react-hook-form"
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { z } from "zod"
 
@@ -39,7 +40,7 @@ const schema = z
       .string()
       .min(3, "Employee ID is required.")
       .regex(/^[A-Za-z]{2,4}\d{3}$/, "Format like EMP011."),
-    email: z.email("Enter a valid email address."),
+    email: z.string().email("Enter a valid email address."),
     password: passwordRules,
     confirmPassword: z.string(),
     role: z.enum(["employee", "hr"]),
@@ -65,7 +66,7 @@ export function SignUpForm() {
     defaultValues: { employeeCode: "", email: "", password: "", confirmPassword: "", role: "employee" },
   })
 
-  const role = watch("role")
+  const selectedRole = watch("role")
 
   const mutation = useMutation({
     mutationFn: authService.signup,
@@ -77,44 +78,63 @@ export function SignUpForm() {
   })
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Create account</CardTitle>
-        <CardDescription>Email verification required before first sign-in.</CardDescription>
+    <Card className="border-border/80 shadow-lg shadow-black/5">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-xl font-bold">Create Account</CardTitle>
+        <CardDescription>Join DayFlow HRMS with your company credentials.</CardDescription>
       </CardHeader>
       <CardContent>
         <form className="space-y-4" onSubmit={handleSubmit((v) => mutation.mutate(v))}>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="employeeCode">Employee ID</Label>
-              <Input id="employeeCode" placeholder="EMP011" {...register("employeeCode")} />
+              <Label htmlFor="employeeCode" className="text-xs font-semibold">
+                Employee ID
+              </Label>
+              <div className="relative">
+                <IdCard className="text-muted-foreground absolute top-2.5 left-3 size-4" />
+                <Input
+                  id="employeeCode"
+                  placeholder="EMP011"
+                  className="pl-9 font-mono"
+                  {...register("employeeCode")}
+                />
+              </div>
               {errors.employeeCode ? (
                 <p className="text-destructive text-xs">{errors.employeeCode.message}</p>
               ) : null}
             </div>
             <div className="space-y-2">
-              <Label>Role</Label>
-              <Select value={role} onValueChange={(v) => setValue("role", v as FormValues["role"])}>
+              <Label className="text-xs font-semibold">Account Role</Label>
+              <Select
+                value={selectedRole}
+                onValueChange={(v) => setValue("role", v as FormValues["role"])}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="employee">Employee</SelectItem>
-                  <SelectItem value="hr">HR</SelectItem>
+                  <SelectItem value="hr">HR / Admin</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="signup-email">Email</Label>
-            <Input
-              id="signup-email"
-              type="email"
-              placeholder="you@dayflow.demo"
-              autoComplete="email"
-              {...register("email")}
-            />
+            <Label htmlFor="signup-email" className="text-xs font-semibold">
+              Work Email Address
+            </Label>
+            <div className="relative">
+              <Mail className="text-muted-foreground absolute top-2.5 left-3 size-4" />
+              <Input
+                id="signup-email"
+                type="email"
+                placeholder="you@dayflow.demo"
+                autoComplete="email"
+                className="pl-9"
+                {...register("email")}
+              />
+            </div>
             {errors.email ? (
               <p className="text-destructive text-xs">{errors.email.message}</p>
             ) : null}
@@ -122,49 +142,57 @@ export function SignUpForm() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="signup-password">Password</Label>
-              <Input
-                id="signup-password"
-                type="password"
-                placeholder="Demo@123"
-                autoComplete="new-password"
-                {...register("password")}
-              />
+              <Label htmlFor="signup-password" className="text-xs font-semibold">
+                Password
+              </Label>
+              <div className="relative">
+                <Lock className="text-muted-foreground absolute top-2.5 left-3 size-4" />
+                <Input
+                  id="signup-password"
+                  type="password"
+                  placeholder="Demo@123"
+                  autoComplete="new-password"
+                  className="pl-9"
+                  {...register("password")}
+                />
+              </div>
               {errors.password ? (
-                <ul className="text-destructive list-inside list-disc text-xs">
-                  <li>{errors.password?.message ?? "Password does not match requirements."}</li>
-                </ul>
+                <p className="text-destructive text-xs">{errors.password.message}</p>
               ) : (
-                <p className="text-muted-foreground text-xs">
-                  8+ chars with upper, lower, number & symbol.
-                </p>
+                <p className="text-muted-foreground text-[11px]">8+ chars with uppercase, number & symbol.</p>
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirm-password">Confirm password</Label>
-              <Input
-                id="confirm-password"
-                type="password"
-                placeholder="Repeat password"
-                autoComplete="new-password"
-                {...register("confirmPassword")}
-              />
+              <Label htmlFor="confirm-password" className="text-xs font-semibold">
+                Confirm Password
+              </Label>
+              <div className="relative">
+                <Lock className="text-muted-foreground absolute top-2.5 left-3 size-4" />
+                <Input
+                  id="confirm-password"
+                  type="password"
+                  placeholder="Repeat password"
+                  autoComplete="new-password"
+                  className="pl-9"
+                  {...register("confirmPassword")}
+                />
+              </div>
               {errors.confirmPassword ? (
                 <p className="text-destructive text-xs">{errors.confirmPassword.message}</p>
               ) : null}
             </div>
           </div>
 
-          <Button type="submit" className="w-full" disabled={mutation.isPending}>
-            {mutation.isPending ? "Creating…" : "Sign up"}
+          <Button type="submit" className="w-full h-10 font-semibold shadow-sm mt-2" disabled={mutation.isPending}>
+            {mutation.isPending ? "Creating Account…" : "Sign Up"}
           </Button>
         </form>
 
-        <p className="text-muted-foreground mt-4 text-center text-sm">
-          Already registered?{" "}
-          <a href="/login" className="text-primary font-medium hover:underline">
-            Sign in
-          </a>
+        <p className="text-muted-foreground mt-5 text-center text-sm">
+          Already have an account?{" "}
+          <Link to="/login" className="text-primary font-semibold hover:underline">
+            Sign In
+          </Link>
         </p>
       </CardContent>
     </Card>

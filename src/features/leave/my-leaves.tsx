@@ -1,16 +1,28 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { CalendarDays, CheckCircle2, Clock, Plus, XCircle } from "lucide-react"
+import {
+  CalendarDays,
+  FileUp,
+  HeartPulse,
+  Palmtree,
+  Plus,
+  Umbrella,
+} from "lucide-react"
 import { useMemo, useState } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import { toast } from "sonner"
 import { z } from "zod"
 
-import { StatCard } from "@/components/dashboard/stat-card"
 import { PageHeader } from "@/components/shared/page-header"
 import { StatusPill } from "@/components/shared/status-pill"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import {
   Dialog,
   DialogContent,
@@ -49,6 +61,8 @@ function ApplyLeaveDialog({
 }) {
   const queryClient = useQueryClient()
   const [type, setType] = useState<LeaveType>("paid")
+  const [fileName, setFileName] = useState<string | null>(null)
+
   const {
     register,
     handleSubmit,
@@ -81,6 +95,7 @@ function ApplyLeaveDialog({
       toast.success("Leave request submitted for approval.")
       void queryClient.invalidateQueries({ queryKey: ["leaves"] })
       reset()
+      setFileName(null)
       onOpenChange(false)
     },
     onError: (error) => toast.error(toUserMessage(error)),
@@ -88,35 +103,43 @@ function ApplyLeaveDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[520px]">
         <DialogHeader>
-          <DialogTitle>Apply for Leave</DialogTitle>
-          <DialogDescription>Submit your time off request for HR review.</DialogDescription>
+          <DialogTitle>Time Off Request</DialogTitle>
+          <DialogDescription>Submit your time off application for manager / HR review.</DialogDescription>
         </DialogHeader>
+
         <form className="space-y-4 pt-2" onSubmit={submit}>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="space-y-2">
+            <Label htmlFor="leave-type" className="text-xs font-semibold">
+              Time Off Type
+            </Label>
+            <select
+              id="leave-type"
+              className="border-input focus-visible:border-primary focus-visible:ring-primary/20 h-9 w-full rounded-md border bg-background px-3 text-sm shadow-xs outline-none focus-visible:ring-3"
+              value={type}
+              onChange={(e) => setType(e.target.value as LeaveType)}
+            >
+              <option value="paid">Paid Time Off (Annual Leave)</option>
+              <option value="sick">Sick Leave</option>
+              <option value="unpaid">Unpaid Leave</option>
+            </select>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="leave-type">Leave type</Label>
-              <select
-                id="leave-type"
-                className="border-input focus-visible:border-ring focus-visible:ring-ring/30 h-9 w-full rounded-md border bg-background px-3 text-sm shadow-sm outline-none focus-visible:ring-[3px]"
-                value={type}
-                onChange={(e) => setType(e.target.value as LeaveType)}
-              >
-                <option value="paid">Paid Leave</option>
-                <option value="sick">Sick Leave</option>
-                <option value="unpaid">Unpaid Leave</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="leave-start">From Date</Label>
+              <Label htmlFor="leave-start" className="text-xs font-semibold">
+                Start Date
+              </Label>
               <Input id="leave-start" type="date" {...register("startDate")} />
               {errors.startDate ? (
                 <p className="text-destructive text-xs">{errors.startDate.message}</p>
               ) : null}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="leave-end">To Date</Label>
+              <Label htmlFor="leave-end" className="text-xs font-semibold">
+                End Date
+              </Label>
               <Input id="leave-end" type="date" {...register("endDate")} />
               {errors.endDate ? (
                 <p className="text-destructive text-xs">{errors.endDate.message}</p>
@@ -125,17 +148,19 @@ function ApplyLeaveDialog({
           </div>
 
           {calculatedDays > 0 ? (
-            <div className="rounded-md bg-muted/40 p-2.5 text-xs text-muted-foreground flex justify-between items-center">
-              <span>Total Requested Duration:</span>
-              <span className="font-semibold text-foreground">{calculatedDays} day{calculatedDays > 1 ? "s" : ""}</span>
+            <div className="rounded-lg bg-primary/10 border border-primary/20 p-3 text-xs text-primary flex justify-between items-center font-medium">
+              <span>Requested Allocation:</span>
+              <span className="font-bold text-foreground">{calculatedDays} Day{calculatedDays > 1 ? "s" : ""}</span>
             </div>
           ) : null}
 
           <div className="space-y-2">
-            <Label htmlFor="leave-reason">Remarks / Reason</Label>
+            <Label htmlFor="leave-reason" className="text-xs font-semibold">
+              Remarks / Reason
+            </Label>
             <Textarea
               id="leave-reason"
-              placeholder="Reason for your time off request…"
+              placeholder="State the reason for your time off request…"
               rows={3}
               {...register("reason")}
             />
@@ -144,9 +169,37 @@ function ApplyLeaveDialog({
             ) : null}
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+          {/* Attachment upload visual matching wireframe */}
+          <div className="space-y-2">
+            <Label className="text-xs font-semibold">Attachment (Optional)</Label>
+            <label className="border-border/80 bg-muted/30 hover:bg-muted/60 flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-4 cursor-pointer transition-colors">
+              <FileUp className="size-6 text-muted-foreground mb-1" />
+              <span className="text-xs font-medium text-foreground">
+                {fileName ? fileName : "Click or drag file to attach (medical note, ticket)"}
+              </span>
+              <span className="text-[10px] text-muted-foreground mt-0.5">PDF, PNG, JPG up to 5MB</span>
+              <input
+                type="file"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) setFileName(file.name)
+                }}
+              />
+            </label>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                reset()
+                setFileName(null)
+                onOpenChange(false)
+              }}
+            >
+              Discard
             </Button>
             <Button type="submit" disabled={createMutation.isPending}>
               {createMutation.isPending ? "Submitting…" : "Submit Request"}
@@ -179,65 +232,108 @@ export function MyLeavesPage() {
   }, [typedLeaves, statusFilter])
 
   return (
-    <>
+    <div className="space-y-6">
       <PageHeader
-        title="Leave Requests"
-        description="Apply for time off, view balances, and track approval status."
+        title="Time Off & Leave Management"
+        description="Apply for vacation, sick leave, track available balance, and view review status."
         actions={
-          <Button onClick={() => setDialogOpen(true)} className="gap-2">
-            <Plus className="size-4" /> Apply for leave
+          <Button onClick={() => setDialogOpen(true)} className="gap-2 shadow-xs">
+            <Plus className="size-4" /> Request Time Off
           </Button>
         }
       />
       <ApplyLeaveDialog open={dialogOpen} onOpenChange={setDialogOpen} />
 
+      {/* Available Balance Cards per reference */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard
-          title="Pending Requests"
-          value={pendingCount}
-          hint="Awaiting HR review"
-          icon={Clock}
-          tone={pendingCount > 0 ? "warning" : "info"}
-        />
-        <StatCard
-          title="Approved Leaves"
-          value={approvedCount}
-          hint="Total approved this year"
-          icon={CheckCircle2}
-          tone="success"
-        />
-        <StatCard
-          title="Rejected Requests"
-          value={rejectedCount}
-          hint="Declined by reviewer"
-          icon={XCircle}
-          tone={rejectedCount > 0 ? "destructive" : "info"}
-        />
+        <Card className="border-border/80 shadow-xs">
+          <CardContent className="flex items-center gap-4 p-5">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Palmtree className="size-5" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Paid Time Off
+              </p>
+              <p className="text-2xl font-bold tracking-tight text-foreground tabular-nums">
+                12 <span className="text-sm font-normal text-muted-foreground">Days Available</span>
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Annual vacation quota</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/80 shadow-xs">
+          <CardContent className="flex items-center gap-4 p-5">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-success/10 text-success">
+              <HeartPulse className="size-5" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Sick Leave
+              </p>
+              <p className="text-2xl font-bold tracking-tight text-foreground tabular-nums">
+                7 <span className="text-sm font-normal text-muted-foreground">Days Available</span>
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Medical & recovery leave</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/80 shadow-xs">
+          <CardContent className="flex items-center gap-4 p-5">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-info/10 text-info">
+              <Umbrella className="size-5" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Unpaid Leave
+              </p>
+              <p className="text-2xl font-bold tracking-tight text-foreground tabular-nums">
+                Discretionary
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Subject to manager approval</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      <Card>
-        <CardHeader className="flex-row items-center justify-between gap-4 pb-4">
-          <CardTitle className="text-base font-semibold">Request History</CardTitle>
+      {/* Leave Requests Ledger */}
+      <Card className="border-border/80 shadow-xs">
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4">
+          <div>
+            <CardTitle className="text-base font-semibold">Time Off History</CardTitle>
+            <CardDescription>All submitted requests and reviewer feedback</CardDescription>
+          </div>
+
           <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-auto">
             <TabsList className="h-8">
-              <TabsTrigger value="all" className="text-xs px-2.5">All ({typedLeaves.length})</TabsTrigger>
-              <TabsTrigger value="pending" className="text-xs px-2.5">Pending ({pendingCount})</TabsTrigger>
-              <TabsTrigger value="approved" className="text-xs px-2.5">Approved ({approvedCount})</TabsTrigger>
-              <TabsTrigger value="rejected" className="text-xs px-2.5">Rejected ({rejectedCount})</TabsTrigger>
+              <TabsTrigger value="all" className="text-xs px-2.5">
+                All ({typedLeaves.length})
+              </TabsTrigger>
+              <TabsTrigger value="pending" className="text-xs px-2.5">
+                Pending ({pendingCount})
+              </TabsTrigger>
+              <TabsTrigger value="approved" className="text-xs px-2.5">
+                Approved ({approvedCount})
+              </TabsTrigger>
+              <TabsTrigger value="rejected" className="text-xs px-2.5">
+                Rejected ({rejectedCount})
+              </TabsTrigger>
             </TabsList>
           </Tabs>
         </CardHeader>
 
         <CardContent>
           {isLoading ? (
-            <p className="text-muted-foreground py-6 text-center text-sm">Loading leave records…</p>
+            <p className="text-muted-foreground py-10 text-center text-sm">Loading leave records…</p>
           ) : filteredLeaves.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 py-10 text-center">
-              <CalendarDays className="text-muted-foreground size-6" />
-              <p className="text-sm font-medium">No leave requests found</p>
-              <p className="text-muted-foreground text-sm">
+            <div className="flex flex-col items-center gap-2 py-12 text-center">
+              <CalendarDays className="text-muted-foreground size-8" />
+              <p className="text-sm font-semibold">No leave requests found</p>
+              <p className="text-muted-foreground text-xs">
                 {statusFilter === "all"
-                  ? "Apply above and your requests will appear here."
+                  ? "Click 'Request Time Off' to submit your first request."
                   : `No requests with status "${statusFilter}".`}
               </p>
             </div>
@@ -245,36 +341,38 @@ export function MyLeavesPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b text-left">
-                    <th className="text-muted-foreground px-3 py-2 font-medium">Type</th>
-                    <th className="text-muted-foreground px-3 py-2 font-medium">Dates</th>
-                    <th className="text-muted-foreground px-3 py-2 font-medium">Days</th>
-                    <th className="text-muted-foreground px-3 py-2 font-medium">Remarks</th>
-                    <th className="text-muted-foreground px-3 py-2 font-medium">HR Comment</th>
-                    <th className="text-muted-foreground px-3 py-2 font-medium">Status</th>
+                  <tr className="border-b border-border text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    <th className="px-4 py-3">Type</th>
+                    <th className="px-4 py-3">Duration</th>
+                    <th className="px-4 py-3">Days</th>
+                    <th className="px-4 py-3">Remarks</th>
+                    <th className="px-4 py-3">HR Comment</th>
+                    <th className="px-4 py-3">Status</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-border/60">
                   {filteredLeaves.map((l) => (
-                    <tr key={l.id} className="hover:bg-muted/50 border-b last:border-0 transition-colors">
-                      <td className="px-3 py-2.5 capitalize font-medium">{l.type}</td>
-                      <td className="px-3 py-2.5 tabular-nums">
+                    <tr key={l.id} className="transition-colors hover:bg-muted/40">
+                      <td className="px-4 py-3.5 capitalize font-medium text-foreground">{l.type} Leave</td>
+                      <td className="px-4 py-3.5 tabular-nums text-foreground">
                         {l.startDate} → {l.endDate}
                       </td>
-                      <td className="px-3 py-2.5 tabular-nums font-semibold">{l.days}</td>
+                      <td className="px-4 py-3.5 tabular-nums font-semibold text-foreground">
+                        {l.days} Day{l.days > 1 ? "s" : ""}
+                      </td>
                       <td
-                        className="text-muted-foreground max-w-[220px] truncate px-3 py-2.5"
+                        className="text-muted-foreground max-w-[200px] truncate px-4 py-3.5 text-xs"
                         title={l.reason}
                       >
                         {l.reason || "—"}
                       </td>
                       <td
-                        className="text-muted-foreground max-w-[220px] truncate px-3 py-2.5"
+                        className="text-muted-foreground max-w-[200px] truncate px-4 py-3.5 text-xs"
                         title={l.reviewerComment ?? ""}
                       >
                         {l.reviewerComment || "—"}
                       </td>
-                      <td className="px-3 py-2.5">
+                      <td className="px-4 py-3.5">
                         <StatusPill status={l.status as LeaveStatus} />
                       </td>
                     </tr>
@@ -285,6 +383,8 @@ export function MyLeavesPage() {
           )}
         </CardContent>
       </Card>
-    </>
+    </div>
   )
 }
+
+export default MyLeavesPage

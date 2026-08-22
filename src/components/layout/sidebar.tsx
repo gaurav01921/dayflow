@@ -23,9 +23,10 @@ interface NavItem {
 
 const EMPLOYEE_NAV: NavItem[] = [
   { to: "/employee/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/employee/profile", label: "Profile", icon: UserRound },
+  { to: "/employee/employees", label: "Employees", icon: Users },
+  { to: "/employee/profile", label: "My Profile", icon: UserRound },
   { to: "/employee/attendance", label: "Attendance", icon: CalendarCheck2 },
-  { to: "/employee/leave", label: "Leave Requests", icon: PlaneTakeoff },
+  { to: "/employee/leave", label: "Time Off", icon: PlaneTakeoff },
   { to: "/employee/payroll", label: "Payroll", icon: Banknote },
 ]
 

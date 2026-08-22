@@ -1,7 +1,8 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation } from "@tanstack/react-query"
+import { Lock, Mail, Shield, UserCheck } from "lucide-react"
 import { useForm } from "react-hook-form"
-import { Navigate, useNavigate } from "react-router-dom"
+import { Link, Navigate, useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { z } from "zod"
 
@@ -20,7 +21,7 @@ import { authService } from "@/services/authService"
 import { useAuthStore } from "@/stores/authStore"
 
 const schema = z.object({
-  email: z.email("Enter a valid email address."),
+  email: z.string().email("Enter a valid email address."),
   password: z.string().min(1, "Password is required."),
 })
 
@@ -34,6 +35,7 @@ export function SignInForm() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -61,56 +63,102 @@ export function SignInForm() {
     )
   }
 
+  const fillDemo = (email: string, pass: string) => {
+    setValue("email", email, { shouldValidate: true })
+    setValue("password", pass, { shouldValidate: true })
+  }
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Sign in</CardTitle>
-        <CardDescription>Use your work email to continue.</CardDescription>
+    <Card className="border-border/80 shadow-lg shadow-black/5">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-xl font-bold">Sign In</CardTitle>
+        <CardDescription>Enter your work email and password to access DayFlow.</CardDescription>
       </CardHeader>
       <CardContent>
         <form className="space-y-4" onSubmit={handleSubmit((v) => mutation.mutate(v))}>
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@dayflow.demo"
-              autoComplete="email"
-              {...register("email")}
-            />
+            <Label htmlFor="email" className="text-xs font-semibold">
+              Work Email / Login ID
+            </Label>
+            <div className="relative">
+              <Mail className="text-muted-foreground absolute top-2.5 left-3 size-4" />
+              <Input
+                id="email"
+                type="email"
+                placeholder="employee@dayflow.demo"
+                autoComplete="email"
+                className="pl-9"
+                {...register("email")}
+              />
+            </div>
             {errors.email ? (
               <p className="text-destructive text-xs">{errors.email.message}</p>
             ) : null}
           </div>
+
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              autoComplete="current-password"
-              {...register("password")}
-            />
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password" className="text-xs font-semibold">
+                Password
+              </Label>
+            </div>
+            <div className="relative">
+              <Lock className="text-muted-foreground absolute top-2.5 left-3 size-4" />
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                autoComplete="current-password"
+                className="pl-9"
+                {...register("password")}
+              />
+            </div>
             {errors.password ? (
               <p className="text-destructive text-xs">{errors.password.message}</p>
             ) : null}
           </div>
-          <Button type="submit" className="w-full" disabled={mutation.isPending}>
-            {mutation.isPending ? "Signing in…" : "Sign in"}
+
+          <Button type="submit" className="w-full h-10 font-semibold shadow-sm" disabled={mutation.isPending}>
+            {mutation.isPending ? "Signing in…" : "Sign In"}
           </Button>
         </form>
 
-        <div className="bg-muted/60 mt-4 rounded-md p-3 text-xs">
-          <p className="font-medium">Demo accounts</p>
-          <p className="text-muted-foreground mt-1">Employee: employee@dayflow.demo · Demo@123</p>
-          <p className="text-muted-foreground">HR: hr@dayflow.demo · Demo@123</p>
+        {/* Demo Accounts Quick-Fill Helper */}
+        <div className="bg-muted/40 border border-border/60 mt-5 rounded-xl p-3.5 space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Demo Credentials (Click to Autofill)
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => fillDemo("employee@dayflow.demo", "Demo@123")}
+              className="flex items-center gap-2 rounded-lg border border-border/60 bg-background/80 hover:bg-accent/80 p-2 text-left transition-colors cursor-pointer"
+            >
+              <UserCheck className="size-4 text-primary shrink-0" />
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-foreground truncate">Employee</p>
+                <p className="text-[10px] text-muted-foreground truncate">Aarav Mehta</p>
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => fillDemo("hr@dayflow.demo", "Demo@123")}
+              className="flex items-center gap-2 rounded-lg border border-border/60 bg-background/80 hover:bg-accent/80 p-2 text-left transition-colors cursor-pointer"
+            >
+              <Shield className="size-4 text-primary shrink-0" />
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-foreground truncate">HR / Admin</p>
+                <p className="text-[10px] text-muted-foreground truncate">Rohan Manager</p>
+              </div>
+            </button>
+          </div>
         </div>
 
-        <p className="text-muted-foreground mt-4 text-center text-sm">
-          No account?{" "}
-          <a href="/signup" className="text-primary font-medium hover:underline">
-            Sign up
-          </a>
+        <p className="text-muted-foreground mt-5 text-center text-sm">
+          Don't have an Account?{" "}
+          <Link to="/signup" className="text-primary font-semibold hover:underline">
+            Sign Up
+          </Link>
         </p>
       </CardContent>
     </Card>
