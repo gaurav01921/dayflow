@@ -357,8 +357,8 @@ function seedPayroll(employees: Employee[], bases: Map<string, number>): Payroll
         allowances:
           salaryStructure.hra + salaryStructure.standardAllowance + salaryStructure.fixedAllowance,
         bonus,
-        deductions: salaryStructure.totalDeductions,
-        netPay: salaryStructure.netSalary + bonus,
+        deductions: salaryStructure.totalDeductions ?? 200,
+        netPay: (salaryStructure.netSalary ?? salaryStructure.basicSalary) + bonus,
         paymentDate: `${month}-28`,
         salaryStructure,
         payableDaysDetails: payableDetails,

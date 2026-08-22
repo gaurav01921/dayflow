@@ -25,6 +25,7 @@ import type {
   Payroll,
   PayrollReport,
   PayrollUpdate,
+  SalaryCalculationInput,
   SignUpInput,
   User,
   VerifyEmailInput,
@@ -464,8 +465,8 @@ export const mockApi = {
         baseSalary: salaryStructure.basicSalary,
         allowances: salaryStructure.hra + salaryStructure.standardAllowance + salaryStructure.fixedAllowance,
         bonus: 0,
-        deductions: salaryStructure.totalDeductions,
-        netPay: salaryStructure.netSalary,
+        deductions: salaryStructure.totalDeductions ?? 200,
+        netPay: salaryStructure.netSalary ?? salaryStructure.basicSalary,
         paymentDate: `${month}-28`,
         salaryStructure,
       }
@@ -473,18 +474,18 @@ export const mockApi = {
     }
 
     if (patch.salaryConfig) {
-      const salaryStructure = calculateSalary(patch.salaryConfig)
+      const salaryStructure = calculateSalary(patch.salaryConfig as SalaryCalculationInput)
       record.salaryStructure = salaryStructure
       record.baseSalary = salaryStructure.basicSalary
       record.allowances =
         salaryStructure.hra + salaryStructure.standardAllowance + salaryStructure.fixedAllowance
       record.bonus = patch.bonus ?? record.bonus ?? 0
-      record.deductions = salaryStructure.totalDeductions
-      record.netPay = salaryStructure.netSalary + record.bonus
+      record.deductions = salaryStructure.totalDeductions ?? 200
+      record.netPay = (salaryStructure.netSalary ?? salaryStructure.basicSalary) + record.bonus
     } else {
       Object.assign(record, patch)
       record.netPay =
-        record.baseSalary + record.allowances + record.bonus - record.deductions
+        (record.baseSalary ?? 0) + (record.allowances ?? 0) + (record.bonus ?? 0) - (record.deductions ?? 0)
     }
 
     pushNotification(

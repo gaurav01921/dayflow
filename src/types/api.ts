@@ -44,6 +44,7 @@ export interface Employee {
   joinDate: string
   address: string
   avatarUrl?: string
+  workingSchedule?: string | { workingDaysPerWeek: number; expectedHoursPerDay: number; breakMinutes: number }
   documents: DocumentFile[]
 }
 
@@ -100,6 +101,23 @@ export interface LeaveReviewInput {
   comment?: string
 }
 
+export interface SalaryStructure {
+  monthlyWage?: number
+  basicSalary: number
+  hra: number
+  standardAllowance: number
+  performanceBonus: number
+  lta: number
+  fixedAllowance: number
+  providentFund: number
+  professionalTax: number
+  totalDeductions?: number
+  grossSalary?: number
+  netSalary?: number
+  employeePf?: number
+  employerPf?: number
+}
+
 export interface Payroll {
   id: string
   employeeId: string
@@ -110,6 +128,9 @@ export interface Payroll {
   deductions: number
   netPay: number
   paymentDate: string
+  salaryStructure?: SalaryStructure
+  salaryConfig?: Record<string, unknown>
+  payableDaysDetails?: PayableDaysResult
 }
 
 export interface PayrollUpdate {
@@ -117,6 +138,76 @@ export interface PayrollUpdate {
   allowances?: number
   bonus?: number
   deductions?: number
+  salaryStructure?: SalaryStructure
+  salaryConfig?: Record<string, unknown>
+}
+
+export interface SalaryCalculationInput {
+  baseSalary?: number
+  allowances?: number
+  bonus?: number
+  deductions?: number
+  monthlyWage?: number
+  basicPercentage?: number
+  hraPercentage?: number
+  standardAllowance?: number
+  performanceBonusPercentage?: number
+  ltaPercentage?: number
+  employeePfRate?: number
+  employerPfRate?: number
+  professionalTax?: number
+}
+
+export interface PayableDaysInput {
+  employeeId?: string
+  month?: string
+  totalWorkingDays?: number
+  presentDays?: number
+  leaveDays?: number
+  unpaidDays?: number
+  workingDays?: number
+  paidLeaveDays?: number
+  unpaidLeaveDays?: number
+  missingAttendanceDays?: number
+}
+
+export interface PayableDaysResult {
+  payableDays: number
+  presentDays?: number
+  unpaidDays: number
+  deductionAmount: number
+  workingDays?: number
+  payableRatio?: number
+}
+
+export interface FullPayrollCalculationInput {
+  baseSalary?: number
+  allowances?: number
+  bonus?: number
+  deductions?: number
+  totalWorkingDays?: number
+  presentDays?: number
+  leaveDays?: number
+  unpaidDays?: number
+  monthlyWage?: number
+  salaryConfig?: Record<string, unknown>
+  workingDays?: number
+  paidLeaveDays?: number
+  unpaidLeaveDays?: number
+  missingAttendanceDays?: number
+}
+
+export interface FullPayrollCalculationResult {
+  baseSalary: number
+  allowances: number
+  bonus: number
+  deductions: number
+  netPay: number
+  payableDays?: number
+  unpaidDays?: number
+  salaryStructure?: SalaryStructure
+  payableDaysDetails?: PayableDaysResult
+  payableDaysResult?: PayableDaysResult
 }
 
 export interface NotificationItem {
