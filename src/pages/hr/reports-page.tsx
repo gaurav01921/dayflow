@@ -1,191 +1,245 @@
 import { useQuery } from "@tanstack/react-query"
 import {
-  Banknote,
-  CalendarCheck2,
-  ChartBar,
-  ChartPie,
-  TrendingUp,
-  Users,
-} from "lucide-react"
-import {
-  Bar,
   BarChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
+  Bar,
   XAxis,
   YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
 } from "recharts"
 
-import { StatCard } from "@/components/dashboard/stat-card"
 import { PageHeader } from "@/components/shared/page-header"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { formatCurrency } from "@/lib/utils"
+import { LoadingState } from "@/components/shared/loading-state"
+import { ErrorState } from "@/components/shared/error-state"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { reportService } from "@/services/reportService"
 
-const COLORS = ["#4f46e5", "#10b981", "#f59e0b", "#06b6d4", "#ec4899", "#8b5cf6"]
+const CHART_COLORS = {
+  present: "#22c55e",
+  absent: "#ef4444",
+  halfDay: "#f59e0b",
+  onLeave: "#6366f1",
+} as const
+
+const PIE_COLORS = ["#22c55e", "#ef4444", "#f59e0b", "#6366f1"]
 
 export function HrReportsPage() {
-  const { data: stats } = useQuery({
-    queryKey: ["reports", "dashboard-stats"],
-    queryFn: reportService.dashboardStats,
-  })
-
-  const { data: attendanceTrends = [] } = useQuery({
+  const {
+    data: attendanceData = [],
+    isLoading: attendanceLoading,
+    error: attendanceError,
+    refetch: refetchAttendance,
+  } = useQuery({
     queryKey: ["reports", "attendance"],
     queryFn: () => reportService.attendanceReport(14),
   })
 
-  const { data: payrollReport } = useQuery({
+  const {
+    data: payrollData,
+    isLoading: payrollLoading,
+    error: payrollError,
+    refetch: refetchPayroll,
+  } = useQuery({
     queryKey: ["reports", "payroll"],
     queryFn: reportService.payrollReport,
   })
 
-  const deptData =
-    payrollReport?.byDepartment.map((d) => ({
-      name: d.department,
-      value: d.totalNet,
-    })) ?? []
+  if (attendanceError) return <ErrorState error={attendanceError} onRetry={() => refetchAttendance()} />
+  if (payrollError) return <ErrorState error={payrollError} onRetry={() => refetchPayroll()} />
+
+  // Aggregate attendance totals for pie chart
+  const attendanceTotals = attendanceData.reduce(
+    (acc, row) => ({
+      present: acc.present + row.present,
+      absent: acc.absent + row.absent,
+      halfDay: acc.halfDay + row.halfDay,
+      onLeave: acc.onLeave + row.onLeave,
+    }),
+    { present: 0, absent: 0, halfDay: 0, onLeave: 0 },
+  )
+
+  const pieData = [
+    { name: "Present", value: attendanceTotals.present },
+    { name: "Absent", value: attendanceTotals.absent },
+    { name: "Half-day", value: attendanceTotals.halfDay },
+    { name: "On Leave", value: attendanceTotals.onLeave },
+  ].filter((d) => d.value > 0)
 
   return (
-    <div className="space-y-6">
+    <>
       <PageHeader
-        title="Workforce Reports & Analytics"
-        description="Visualize workforce attendance trends, departmental payroll distribution, and key organizational metrics."
+        title="Reports"
+        description="Attendance and payroll analytics for the organization."
       />
 
-      {/* Summary KPI Cards */}
-      {stats && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard
-            title="Total Headcount"
-            value={stats.totalEmployees}
-            hint="Active team members"
-            icon={Users}
-            tone="primary"
-          />
-          <StatCard
-            title="Present Today"
-            value={stats.presentToday}
-            hint="In-office attendance"
-            icon={CalendarCheck2}
-            tone="success"
-          />
-          <StatCard
-            title="Leaves Active"
-            value={stats.onLeaveToday}
-            hint="Scheduled time off"
-            icon={TrendingUp}
-            tone="warning"
-          />
-          <StatCard
-            title="Monthly Payroll"
-            value={formatCurrency(stats.monthlyPayrollTotal)}
-            hint="Total payroll volume"
-            icon={Banknote}
-            tone="info"
-          />
-        </div>
-      )}
-
-      {/* Analytics Charts Grid */}
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Attendance Trend Chart */}
-        <Card className="border-border/80 shadow-xs">
+        {/* Attendance Bar Chart */}
+        <Card>
           <CardHeader>
-            <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <ChartBar className="size-4 text-primary" /> Attendance Trends (Last 14 Days)
-            </CardTitle>
-            <CardDescription>Daily present vs on-leave headcount breakdown</CardDescription>
+            <CardTitle>Attendance Overview (14 days)</CardTitle>
           </CardHeader>
-          <CardContent className="h-80">
-            {attendanceTrends.length === 0 ? (
-              <p className="text-muted-foreground text-center py-20 text-sm">No trend data available.</p>
+          <CardContent>
+            {attendanceLoading ? (
+              <LoadingState label="Loading attendance report…" />
+            ) : attendanceData.length === 0 ? (
+              <p className="text-muted-foreground py-8 text-center text-sm">No attendance data available.</p>
             ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={attendanceTrends} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={attendanceData}>
+                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                   <XAxis
                     dataKey="date"
-                    tickFormatter={(v) => v.slice(5)}
-                    tickLine={false}
-                    axisLine={false}
-                    fontSize={11}
-                  />
-                  <YAxis tickLine={false} axisLine={false} fontSize={11} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "var(--color-card)",
-                      borderColor: "var(--color-border)",
-                      borderRadius: "8px",
-                      fontSize: "12px",
+                    tickFormatter={(v: string) => {
+                      const d = new Date(v + "T00:00:00")
+                      return d.toLocaleDateString("en-US", { month: "short", day: "numeric" })
                     }}
+                    tick={{ fontSize: 11 }}
                   />
-                  <Legend wrapperStyle={{ fontSize: "12px" }} />
-                  <Bar dataKey="present" name="Present" fill="#4f46e5" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="onLeave" name="On Leave" fill="#06b6d4" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="absent" name="Absent" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                  <YAxis tick={{ fontSize: 11 }} />
+                  <Tooltip
+                    labelFormatter={(label) =>
+                      new Date(String(label) + "T00:00:00").toLocaleDateString("en-US", {
+                        weekday: "short",
+                        month: "short",
+                        day: "numeric",
+                      })
+                    }
+                  />
+                  <Legend />
+                  <Bar dataKey="present" fill={CHART_COLORS.present} name="Present" radius={[2, 2, 0, 0]} />
+                  <Bar dataKey="absent" fill={CHART_COLORS.absent} name="Absent" radius={[2, 2, 0, 0]} />
+                  <Bar dataKey="halfDay" fill={CHART_COLORS.halfDay} name="Half-day" radius={[2, 2, 0, 0]} />
+                  <Bar dataKey="onLeave" fill={CHART_COLORS.onLeave} name="On Leave" radius={[2, 2, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
           </CardContent>
         </Card>
 
-        {/* Department Payroll Breakdown */}
-        <Card className="border-border/80 shadow-xs">
+        {/* Attendance Pie Chart */}
+        <Card>
           <CardHeader>
-            <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <ChartPie className="size-4 text-primary" /> Payroll By Department
-            </CardTitle>
-            <CardDescription>Distribution of net salaries across business units</CardDescription>
+            <CardTitle>Attendance Distribution</CardTitle>
           </CardHeader>
-          <CardContent className="h-80 flex flex-col items-center justify-center">
-            {deptData.length === 0 ? (
-              <p className="text-muted-foreground text-center py-20 text-sm">No department data available.</p>
+          <CardContent>
+            {attendanceLoading ? (
+              <LoadingState label="Loading…" />
+            ) : pieData.length === 0 ? (
+              <p className="text-muted-foreground py-8 text-center text-sm">No data to display.</p>
             ) : (
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie
-                    data={deptData}
+                    data={pieData}
                     cx="50%"
                     cy="50%"
                     innerRadius={60}
-                    outerRadius={95}
+                    outerRadius={100}
                     paddingAngle={3}
                     dataKey="value"
+                    label={({ name, percent }) =>
+                      `${name} ${((percent ?? 0) * 100).toFixed(0)}%`
+                    }
                   >
-                    {deptData.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    {pieData.map((_entry, index) => (
+                      <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip
-                    formatter={(val) => [formatCurrency(Number(val)), "Net Payroll"]}
-                    contentStyle={{
-                      backgroundColor: "var(--color-card)",
-                      borderColor: "var(--color-border)",
-                      borderRadius: "8px",
-                      fontSize: "12px",
-                    }}
-                  />
-                  <Legend wrapperStyle={{ fontSize: "12px" }} />
+                  <Tooltip />
+                  <Legend />
                 </PieChart>
               </ResponsiveContainer>
             )}
           </CardContent>
         </Card>
+
+        {/* Payroll by Department */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Payroll by Department</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {payrollLoading ? (
+              <LoadingState label="Loading payroll report…" />
+            ) : !payrollData || payrollData.byDepartment.length === 0 ? (
+              <p className="text-muted-foreground py-8 text-center text-sm">No payroll data available.</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={payrollData.byDepartment} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                  <XAxis type="number" tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 11 }} />
+                  <YAxis type="category" dataKey="department" tick={{ fontSize: 12 }} width={100} />
+                  <Tooltip formatter={(value) => [`$${Number(value).toLocaleString()}`, "Net Pay"]} />
+                  <Bar dataKey="totalNet" fill="#6366f1" name="Net Pay" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Payroll Summary */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Monthly Payroll Summary</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {payrollLoading ? (
+              <LoadingState label="Loading…" />
+            ) : !payrollData ? (
+              <p className="text-muted-foreground py-8 text-center text-sm">No data available.</p>
+            ) : (
+              <div className="space-y-3">
+                <SummaryRow label="Month" value={payrollData.month} />
+                <SummaryRow label="Total Base Salary" value={`$${payrollData.totalBase.toLocaleString()}`} />
+                <SummaryRow label="Total Allowances" value={`$${payrollData.totalAllowances.toLocaleString()}`} />
+                <SummaryRow label="Total Bonus" value={`$${payrollData.totalBonus.toLocaleString()}`} />
+                <SummaryRow
+                  label="Total Deductions"
+                  value={`−$${payrollData.totalDeductions.toLocaleString()}`}
+                  destructive
+                />
+                <div className="border-t pt-3">
+                  <SummaryRow
+                    label="Total Net Pay"
+                    value={`$${payrollData.totalNet.toLocaleString()}`}
+                    highlight
+                  />
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
-    </div>
+    </>
   )
 }
 
-export default HrReportsPage
+function SummaryRow({
+  label,
+  value,
+  destructive = false,
+  highlight = false,
+}: {
+  label: string
+  value: string
+  destructive?: boolean
+  highlight?: boolean
+}) {
+  return (
+    <div className="flex items-center justify-between border-b pb-2 last:border-b-0 last:pb-0">
+      <span className="text-muted-foreground text-sm">{label}</span>
+      <span
+        className={`font-semibold tabular-nums ${
+          destructive ? "text-destructive" : highlight ? "text-primary" : ""
+        }`}
+      >
+        {value}
+      </span>
+    </div>
+  )
+}

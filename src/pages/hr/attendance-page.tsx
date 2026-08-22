@@ -1,30 +1,25 @@
 import { useQuery } from "@tanstack/react-query"
-import {
-  Calendar,
-  CalendarDays,
-  ChevronLeft,
-  ChevronRight,
-  PlaneTakeoff,
-  UserCheck,
-  UserX,
-} from "lucide-react"
-import { useMemo, useState } from "react"
+import { useState } from "react"
+import { CalendarCheck2, Search } from "lucide-react"
 
-import { StatCard } from "@/components/dashboard/stat-card"
 import { PageHeader } from "@/components/shared/page-header"
 import { StatusPill } from "@/components/shared/status-pill"
-import { Button } from "@/components/ui/button"
+import { LoadingState } from "@/components/shared/loading-state"
+import { EmptyState } from "@/components/shared/empty-state"
+import { ErrorState } from "@/components/shared/error-state"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { SearchBar } from "@/components/ui/search-bar"
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { attendanceService } from "@/services/attendanceService"
 import { employeeService } from "@/services/employeeService"
-import type { AttendanceRecord, Employee } from "@/types/api"
+import { toISODate } from "@/mocks/mockDb"
+import type { Employee } from "@/types/api"
 
 function formatTime(iso: string | null): string {
   if (!iso) return "—"
@@ -32,15 +27,28 @@ function formatTime(iso: string | null): string {
 }
 
 export function HrAttendancePage() {
-  const [selectedDateISO, setSelectedDateISO] = useState<string>(
-    () => new Date().toISOString().slice(0, 10)
-  )
-  const [searchTerm, setSearchTerm] = useState("")
+  const [employeeFilter, setEmployeeFilter] = useState<string>("all")
+  const [dateFrom, setDateFrom] = useState(() => {
+    const d = new Date()
+    d.setDate(d.getDate() - 14)
+    return toISODate(d)
+  })
+  const [dateTo, setDateTo] = useState(() => toISODate(new Date()))
+  const [search, setSearch] = useState("")
 
-  const { data: attendanceList = [], isLoading: loadingAttendance } = useQuery({
-    queryKey: ["attendance", "all"],
-    queryFn: () => attendanceService.list(),
-    refetchInterval: 30_000,
+  const {
+    data: records = [],
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["attendance", employeeFilter, dateFrom, dateTo],
+    queryFn: () =>
+      attendanceService.list({
+        employeeId: employeeFilter === "all" ? undefined : employeeFilter,
+        from: dateFrom,
+        to: dateTo,
+      }),
   })
 
   const { data: employees = [] } = useQuery({
@@ -48,191 +56,128 @@ export function HrAttendancePage() {
     queryFn: employeeService.list,
   })
 
-  // Map employee details by ID
-  const employeeMap = useMemo(() => {
-    const map = new Map<string, Employee>()
-    for (const emp of employees) {
-      map.set(emp.id, emp)
-    }
-    return map
-  }, [employees])
+  const employeeMap = new Map<string, Employee>(
+    employees.map((e) => [e.id, e]),
+  )
 
-  // Records for selected date
-  const recordsForDate = useMemo(() => {
-    return attendanceList.filter((r) => r.date === selectedDateISO)
-  }, [attendanceList, selectedDateISO])
+  const filteredRecords = records.filter((r) => {
+    if (!search) return true
+    const emp = employeeMap.get(r.employeeId)
+    if (!emp) return false
+    const q = search.toLowerCase()
+    return (
+      emp.firstName.toLowerCase().includes(q) ||
+      emp.lastName.toLowerCase().includes(q) ||
+      emp.employeeCode.toLowerCase().includes(q)
+    )
+  })
 
-  // Summary counts for selected date
-  const counts = useMemo(() => {
-    const present = recordsForDate.filter((r) => r.status === "present").length
-    const absent = recordsForDate.filter((r) => r.status === "absent").length
-    const onLeave = recordsForDate.filter((r) => r.status === "leave").length
-    return {
-      present: present || Math.max(employees.length - 2, 0),
-      absent: absent || 1,
-      onLeave: onLeave || 1,
-    }
-  }, [recordsForDate, employees])
-
-  // Filtered rows
-  const filteredRecords = useMemo(() => {
-    const source = recordsForDate.length > 0 ? recordsForDate : attendanceList
-    return source.filter((r) => {
-      const emp = employeeMap.get(r.employeeId)
-      const empName = emp ? `${emp.firstName} ${emp.lastName}` : r.employeeId
-      const empCode = emp ? emp.employeeCode : ""
-      const search = searchTerm.toLowerCase()
-
-      return (
-        empName.toLowerCase().includes(search) ||
-        empCode.toLowerCase().includes(search) ||
-        r.date.includes(search)
-      )
-    })
-  }, [recordsForDate, attendanceList, employeeMap, searchTerm])
-
-  const changeDate = (offsetDays: number) => {
-    const d = new Date(selectedDateISO + "T00:00:00")
-    d.setDate(d.getDate() + offsetDays)
-    setSelectedDateISO(d.toISOString().slice(0, 10))
-  }
+  if (error) return <ErrorState error={error} onRetry={() => refetch()} />
 
   return (
-    <div className="space-y-6">
+    <>
       <PageHeader
-        title="Workforce Attendance"
-        description="Monitor organization-wide check-in logs, analyze attendance patterns, and verify daily work hours."
+        title="Attendance"
+        description="View attendance records for all employees."
       />
 
-      {/* Summary KPI Cards per reference */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard
-          title="Present Today"
-          value={counts.present}
-          hint="Employees currently checked in"
-          icon={UserCheck}
-          tone="success"
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative max-w-xs flex-1">
+          <Search className="text-muted-foreground absolute top-2.5 left-2.5 size-4" />
+          <Input
+            placeholder="Search employee…"
+            className="pl-8"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <Select value={employeeFilter} onValueChange={setEmployeeFilter}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="All employees" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All employees</SelectItem>
+            {employees.map((emp) => (
+              <SelectItem key={emp.id} value={emp.id}>
+                {emp.firstName} {emp.lastName}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Input
+          type="date"
+          className="w-[150px]"
+          value={dateFrom}
+          onChange={(e) => setDateFrom(e.target.value)}
         />
-        <StatCard
-          title="Absent Today"
-          value={counts.absent}
-          hint="Unscheduled absence records"
-          icon={UserX}
-          tone="destructive"
-        />
-        <StatCard
-          title="On Leave Today"
-          value={counts.onLeave}
-          hint="Approved time off"
-          icon={PlaneTakeoff}
-          tone="info"
+        <span className="text-muted-foreground text-sm">to</span>
+        <Input
+          type="date"
+          className="w-[150px]"
+          value={dateTo}
+          onChange={(e) => setDateTo(e.target.value)}
         />
       </div>
 
-      {/* Date Navigation & Search Controls */}
-      <Card className="border-border/80 shadow-xs">
-        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4">
-          <div>
-            <CardTitle className="text-base font-semibold">Attendance Ledger</CardTitle>
-            <CardDescription>Daily clock-in verification records</CardDescription>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <SearchBar
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onClear={() => setSearchTerm("")}
-              placeholder="Search employee or ID…"
-              className="w-full sm:w-60"
-            />
-
-            {/* Date Navigator */}
-            <div className="flex items-center justify-between sm:justify-start gap-1.5">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => changeDate(-1)}
-                className="h-9 px-2.5"
-              >
-                <ChevronLeft className="size-4" />
-              </Button>
-              <div className="flex items-center gap-1.5 bg-muted/60 border border-border px-3 py-1.5 rounded-md text-xs font-semibold">
-                <Calendar className="size-3.5 text-primary" />
-                <span>
-                  {new Date(selectedDateISO + "T00:00:00").toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </span>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => changeDate(1)}
-                className="h-9 px-2.5"
-              >
-                <ChevronRight className="size-4" />
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-
-        <CardContent>
-          {loadingAttendance ? (
-            <p className="text-muted-foreground py-10 text-center text-sm">Loading workforce records…</p>
-          ) : filteredRecords.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 py-12 text-center">
-              <CalendarDays className="text-muted-foreground size-8" />
-              <p className="text-sm font-semibold">No records match this date or search criteria</p>
-              <p className="text-muted-foreground text-xs">
-                Switch date or clear your search term to see other records.
-              </p>
-            </div>
-          ) : (
+      {isLoading ? (
+        <LoadingState label="Loading attendance records…" />
+      ) : filteredRecords.length === 0 ? (
+        <EmptyState
+          icon={CalendarCheck2}
+          title="No attendance records"
+          description="No records found for the selected filters."
+        />
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              Attendance Records
+              <span className="text-muted-foreground ml-2 text-sm font-normal">
+                ({filteredRecords.length} record{filteredRecords.length !== 1 ? "s" : ""})
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    <th className="px-4 py-3">Date</th>
-                    <th className="px-4 py-3">Day</th>
-                    <th className="px-4 py-3">Employee</th>
-                    <th className="px-4 py-3">Check In</th>
-                    <th className="px-4 py-3">Check Out</th>
-                    <th className="px-4 py-3">Work Hours</th>
-                    <th className="px-4 py-3">Extra Hours</th>
-                    <th className="px-4 py-3">Status</th>
+                  <tr className="border-b text-left">
+                    <th className="text-muted-foreground px-3 py-2 font-medium">Employee</th>
+                    <th className="text-muted-foreground px-3 py-2 font-medium">Date</th>
+                    <th className="text-muted-foreground px-3 py-2 font-medium">Check In</th>
+                    <th className="text-muted-foreground px-3 py-2 font-medium">Check Out</th>
+                    <th className="text-muted-foreground px-3 py-2 font-medium">Hours</th>
+                    <th className="text-muted-foreground px-3 py-2 font-medium">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border/60">
-                  {filteredRecords.map((r: AttendanceRecord) => {
-                    const emp = employeeMap.get(r.employeeId)
-                    const empName = emp ? `${emp.firstName} ${emp.lastName}` : r.employeeId
-                    const empCode = emp ? emp.employeeCode : ""
-                    const recordDate = new Date(r.date + "T00:00:00")
-                    const dayName = recordDate.toLocaleDateString("en-US", { weekday: "short" })
-                    const extraHours = r.hoursWorked > 8 ? Math.round((r.hoursWorked - 8) * 10) / 10 : 0
-
+                <tbody>
+                  {filteredRecords.map((record) => {
+                    const emp = employeeMap.get(record.employeeId)
                     return (
-                      <tr key={r.id} className="transition-colors hover:bg-muted/40">
-                        <td className="px-4 py-3.5 font-mono text-xs text-muted-foreground">{r.date}</td>
-                        <td className="px-4 py-3.5 font-medium text-foreground">{dayName}</td>
-                        <td className="px-4 py-3.5">
+                      <tr key={record.id} className="hover:bg-muted/50 border-b last:border-0">
+                        <td className="px-3 py-2.5">
                           <div>
-                            <p className="font-semibold text-foreground">{empName}</p>
-                            <p className="font-mono text-xs text-muted-foreground">{empCode}</p>
+                            <p className="font-medium">
+                              {emp ? `${emp.firstName} ${emp.lastName}` : record.employeeId}
+                            </p>
+                            <p className="text-muted-foreground text-xs">
+                              {emp?.employeeCode ?? "—"}
+                            </p>
                           </div>
                         </td>
-                        <td className="px-4 py-3.5 tabular-nums text-foreground">{formatTime(r.checkIn)}</td>
-                        <td className="px-4 py-3.5 tabular-nums text-foreground">{formatTime(r.checkOut)}</td>
-                        <td className="px-4 py-3.5 tabular-nums font-semibold text-foreground">
-                          {r.hoursWorked ? `${r.hoursWorked}h` : "—"}
+                        <td className="px-3 py-2.5">
+                          {new Date(record.date + "T00:00:00").toLocaleDateString("en-US", {
+                            weekday: "short",
+                            month: "short",
+                            day: "numeric",
+                          })}
                         </td>
-                        <td className="px-4 py-3.5 tabular-nums text-muted-foreground">
-                          {extraHours > 0 ? `+${extraHours}h` : "—"}
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <StatusPill status={r.status} />
+                        <td className="px-3 py-2.5 tabular-nums">{formatTime(record.checkIn)}</td>
+                        <td className="px-3 py-2.5 tabular-nums">{formatTime(record.checkOut)}</td>
+                        <td className="px-3 py-2.5 tabular-nums">{record.hoursWorked}h</td>
+                        <td className="px-3 py-2.5">
+                          <StatusPill status={record.status} />
                         </td>
                       </tr>
                     )
@@ -240,11 +185,9 @@ export function HrAttendancePage() {
                 </tbody>
               </table>
             </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+          </CardContent>
+        </Card>
+      )}
+    </>
   )
 }
-
-export default HrAttendancePage
