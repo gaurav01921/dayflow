@@ -34,6 +34,7 @@ export function LeaveReviewDialog({
       toast.success(`Leave ${input.status}.`)
       void queryClient.invalidateQueries({ queryKey: ["leaves"] })
       void queryClient.invalidateQueries({ queryKey: ["reports"] })
+      void queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] })
       setComment("")
       onClose()
     },

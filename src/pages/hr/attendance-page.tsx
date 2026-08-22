@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select"
 import { attendanceService } from "@/services/attendanceService"
 import { employeeService } from "@/services/employeeService"
-import { toISODate } from "@/mocks/mockDb"
+import { toISODate } from "@/lib/utils"
 import type { Employee } from "@/types/api"
 
 function formatTime(iso: string | null): string {

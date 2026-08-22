@@ -29,8 +29,7 @@ import {
 import { payrollService } from "@/services/payrollService"
 import { employeeService } from "@/services/employeeService"
 import { toUserMessage } from "@/lib/api-error"
-import { formatCurrency } from "@/lib/utils"
-import { toISODate } from "@/mocks/mockDb"
+import { formatCurrency, toISODate } from "@/lib/utils"
 import type { Employee, Payroll, PayrollUpdate } from "@/types/api"
 
 export function HrPayrollPage() {
@@ -73,6 +72,8 @@ export function HrPayrollPage() {
     onSuccess: () => {
       toast.success("Payroll updated.")
       void queryClient.invalidateQueries({ queryKey: ["payroll"] })
+      void queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] })
+      void queryClient.invalidateQueries({ queryKey: ["reports"] })
       setEditingPayroll(null)
     },
     onError: (e) => toast.error(toUserMessage(e)),

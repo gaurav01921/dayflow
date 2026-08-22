@@ -20,8 +20,7 @@ import {
 } from "@/components/ui/dialog"
 import { employeeService } from "@/services/employeeService"
 import { attendanceService } from "@/services/attendanceService"
-import { formatDate } from "@/lib/utils"
-import { toISODate } from "@/mocks/mockDb"
+import { formatDate, toISODate } from "@/lib/utils"
 import type { Employee } from "@/types/api"
 
 export function HrEmployeesPage() {

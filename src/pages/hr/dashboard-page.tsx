@@ -27,7 +27,7 @@ import { leaveService } from "@/services/leaveService"
 import { employeeService } from "@/services/employeeService"
 import { attendanceService } from "@/services/attendanceService"
 import { notificationService } from "@/services/notificationService"
-import { toISODate } from "@/mocks/mockDb"
+import { toISODate } from "@/lib/utils"
 import type { Employee, LeaveRequest } from "@/types/api"
 
 export function HrDashboardPage() {
