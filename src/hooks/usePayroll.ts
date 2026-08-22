@@ -1,8 +1,14 @@
+import { useMemo } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { queryKeys } from "@/hooks/queryKeys"
 import { payrollService } from "@/services/payrollService"
-import type { PayrollUpdate } from "@/types/api"
+import type {
+  FullPayrollCalculationInput,
+  PayableDaysInput,
+  PayrollUpdate,
+  SalaryCalculationInput,
+} from "@/types/api"
 
 export function usePayroll(employeeId?: string) {
   const queryClient = useQueryClient()
@@ -33,4 +39,16 @@ export function usePayroll(employeeId?: string) {
     updatePayroll: updatePayrollMutation.mutateAsync,
     updatePayrollMutation,
   }
+}
+
+export function useSalaryCalculator(input: SalaryCalculationInput) {
+  return useMemo(() => payrollService.calculateSalary(input), [input])
+}
+
+export function usePayableDaysCalculator(input: PayableDaysInput) {
+  return useMemo(() => payrollService.calculatePayableDays(input), [input])
+}
+
+export function useFullPayrollCalculator(input: FullPayrollCalculationInput) {
+  return useMemo(() => payrollService.calculateFullPayroll(input), [input])
 }

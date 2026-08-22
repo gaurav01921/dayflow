@@ -1,3 +1,4 @@
+import { calculatePayableDays, calculateSalary } from "@/lib/payroll/index"
 import type {
   AttendanceRecord,
   Employee,
@@ -55,7 +56,7 @@ function seedEmployees(): { users: UserWithPassword[]; employees: Employee[] } {
       dept: "Engineering",
       position: "Frontend Developer",
       type: "full-time" as const,
-      base: 5800,
+      base: 50000,
     },
     {
       id: "usr-emp-2",
@@ -66,7 +67,7 @@ function seedEmployees(): { users: UserWithPassword[]; employees: Employee[] } {
       dept: "Marketing",
       position: "Marketing Specialist",
       type: "full-time" as const,
-      base: 4900,
+      base: 45000,
     },
     {
       id: "usr-emp-3",
@@ -77,7 +78,7 @@ function seedEmployees(): { users: UserWithPassword[]; employees: Employee[] } {
       dept: "Engineering",
       position: "Backend Developer",
       type: "full-time" as const,
-      base: 6400,
+      base: 60000,
     },
     {
       id: "usr-emp-4",
@@ -88,7 +89,7 @@ function seedEmployees(): { users: UserWithPassword[]; employees: Employee[] } {
       dept: "Design",
       position: "UI/UX Designer",
       type: "full-time" as const,
-      base: 5400,
+      base: 52000,
     },
     {
       id: "usr-emp-5",
@@ -99,7 +100,7 @@ function seedEmployees(): { users: UserWithPassword[]; employees: Employee[] } {
       dept: "Sales",
       position: "Account Executive",
       type: "full-time" as const,
-      base: 5200,
+      base: 48000,
     },
     {
       id: "usr-emp-6",
@@ -110,7 +111,7 @@ function seedEmployees(): { users: UserWithPassword[]; employees: Employee[] } {
       dept: "Engineering",
       position: "QA Engineer",
       type: "contract" as const,
-      base: 4600,
+      base: 42000,
     },
     {
       id: "usr-emp-7",
@@ -121,7 +122,7 @@ function seedEmployees(): { users: UserWithPassword[]; employees: Employee[] } {
       dept: "Finance",
       position: "Payroll Officer",
       type: "part-time" as const,
-      base: 3800,
+      base: 38000,
     },
     {
       id: "usr-emp-8",
@@ -132,7 +133,7 @@ function seedEmployees(): { users: UserWithPassword[]; employees: Employee[] } {
       dept: "Design",
       position: "Brand Designer",
       type: "full-time" as const,
-      base: 5000,
+      base: 47000,
     },
   ]
 
@@ -185,6 +186,11 @@ function seedEmployees(): { users: UserWithPassword[]; employees: Employee[] } {
         uploadedAt: toISODate(addDays(TODAY, -299)),
       },
     ],
+    workingSchedule: {
+      workingDaysPerWeek: 5,
+      expectedHoursPerDay: 8,
+      breakMinutes: 60,
+    },
   }))
 
   employees.push({
@@ -208,6 +214,11 @@ function seedEmployees(): { users: UserWithPassword[]; employees: Employee[] } {
         uploadedAt: toISODate(addDays(TODAY, -899)),
       },
     ],
+    workingSchedule: {
+      workingDaysPerWeek: 5,
+      expectedHoursPerDay: 8,
+      breakMinutes: 60,
+    },
   })
 
   return { users, employees }
@@ -218,25 +229,26 @@ function seedAttendance(employeeIds: string[]): AttendanceRecord[] {
   for (let offset = 14; offset >= 1; offset--) {
     const date = addDays(TODAY, -offset)
     if (isWeekend(date)) continue
-employeeIds.forEach((empId, _idx) => {
+    employeeIds.forEach((empId, _idx) => {
       const roll = (_idx * 7 + offset * 3) % 17
       let status: AttendanceRecord["status"] = "present"
       if (roll === 3) status = "half-day"
       else if (roll === 8) status = "absent"
-      else if (roll === 12 || empId === "usr-emp-3" && offset <= 3) status = "leave"
+      else if (roll === 12 || (empId === "usr-emp-3" && offset <= 3)) status = "leave"
       const checkedIn = status === "present" || status === "half-day"
       records.push({
         id: `att-${empId}-${toISODate(date)}`,
         employeeId: empId,
         date: toISODate(date),
         checkIn: checkedIn ? new Date(date.setHours(9, 2 + _idx)).toISOString() : null,
-        checkOut: checkedIn ? new Date(date.setHours(status === "half-day" ? 13 : 17, 30)).toISOString() : null,
+        checkOut: checkedIn
+          ? new Date(date.setHours(status === "half-day" ? 13 : 17, 30)).toISOString()
+          : null,
         status,
         hoursWorked: status === "present" ? 8 : status === "half-day" ? 4 : 0,
       })
     })
   }
-  // Today: everyone present except demo employee (so check-in works live in the demo).
   const todayISO = toISODate(TODAY)
   const now = new Date()
   employeeIds.forEach((empId) => {
@@ -320,30 +332,36 @@ function seedLeaves(): LeaveRequest[] {
   ]
 }
 
-function seedPayroll(
-  employees: Employee[],
-  bases: Map<string, number>
-): Payroll[] {
+function seedPayroll(employees: Employee[], bases: Map<string, number>): Payroll[] {
   const records: Payroll[] = []
   for (let m = 3; m >= 1; m--) {
     const monthDate = new Date(TODAY.getFullYear(), TODAY.getMonth() - (m - 1), 15)
     const month = monthDate.toISOString().slice(0, 7)
     employees.forEach((emp) => {
       if (emp.role !== "employee") return
-      const base = bases.get(emp.id) ?? 5000
-      const allowances = 350 + ((base % 400))
+      const wage = bases.get(emp.id) ?? 50000
+      const salaryStructure = calculateSalary({ monthlyWage: wage })
       const bonus = emp.id === "usr-emp-1" && m === 1 ? 500 : 0
-      const deductions = Math.round(base * 0.12)
+      const payableDetails = calculatePayableDays({
+        workingDays: 26,
+        presentDays: 22,
+        paidLeaveDays: 2,
+        unpaidLeaveDays: 1,
+        missingAttendanceDays: 1,
+      })
       records.push({
         id: `pay-${emp.id}-${month}`,
         employeeId: emp.id,
         month,
-        baseSalary: base,
-        allowances,
+        baseSalary: salaryStructure.basicSalary,
+        allowances:
+          salaryStructure.hra + salaryStructure.standardAllowance + salaryStructure.fixedAllowance,
         bonus,
-        deductions,
-        netPay: base + allowances + bonus - deductions,
+        deductions: salaryStructure.totalDeductions,
+        netPay: salaryStructure.netSalary + bonus,
         paymentDate: `${month}-28`,
+        salaryStructure,
+        payableDaysDetails: payableDetails,
       })
     })
   }
@@ -412,18 +430,18 @@ function seed(): MockDatabase {
 }
 
 const BASES_BY_CODE: Record<string, number> = {
-  EMP001: 5800,
-  EMP002: 4900,
-  EMP003: 6400,
-  EMP004: 5400,
-  EMP005: 5200,
-  EMP006: 4600,
-  EMP007: 3800,
-  EMP008: 5000,
+  EMP001: 50000,
+  EMP002: 45000,
+  EMP003: 60000,
+  EMP004: 52000,
+  EMP005: 48000,
+  EMP006: 42000,
+  EMP007: 38000,
+  EMP008: 47000,
 }
 
 function seedEmployeesRawBase(code: string): number {
-  return BASES_BY_CODE[code] ?? 5000
+  return BASES_BY_CODE[code] ?? 50000
 }
 
 export const mockDb: MockDatabase = seed()

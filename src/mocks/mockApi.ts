@@ -1,4 +1,5 @@
 import { ApiError } from "@/lib/api-error"
+import { calculateSalary } from "@/lib/payroll/index"
 import { useAuthStore } from "@/stores/authStore"
 import {
   addDays,
@@ -455,22 +456,37 @@ export const mockApi = {
       (p) => p.employeeId === employeeId && p.month === month
     )
     if (!record) {
+      const salaryStructure = calculateSalary({ monthlyWage: 50000 })
       record = {
         id: nextId("pay"),
         employeeId,
         month,
-        baseSalary: 5000,
-        allowances: 400,
+        baseSalary: salaryStructure.basicSalary,
+        allowances: salaryStructure.hra + salaryStructure.standardAllowance + salaryStructure.fixedAllowance,
         bonus: 0,
-        deductions: 600,
-        netPay: 4800,
+        deductions: salaryStructure.totalDeductions,
+        netPay: salaryStructure.netSalary,
         paymentDate: `${month}-28`,
+        salaryStructure,
       }
       mockDb.payroll.push(record)
     }
-    Object.assign(record, patch)
-    record.netPay =
-      record.baseSalary + record.allowances + record.bonus - record.deductions
+
+    if (patch.salaryConfig) {
+      const salaryStructure = calculateSalary(patch.salaryConfig)
+      record.salaryStructure = salaryStructure
+      record.baseSalary = salaryStructure.basicSalary
+      record.allowances =
+        salaryStructure.hra + salaryStructure.standardAllowance + salaryStructure.fixedAllowance
+      record.bonus = patch.bonus ?? record.bonus ?? 0
+      record.deductions = salaryStructure.totalDeductions
+      record.netPay = salaryStructure.netSalary + record.bonus
+    } else {
+      Object.assign(record, patch)
+      record.netPay =
+        record.baseSalary + record.allowances + record.bonus - record.deductions
+    }
+
     pushNotification(
       employeeId,
       "Payroll updated",

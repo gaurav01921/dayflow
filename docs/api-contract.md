@@ -70,7 +70,7 @@ Role: public. Mock accepts code `123456`.
 ## Employees
 
 ### GET /employees
-Response `200` → `Employee[]`
+Response `200` → `Employee[]` (includes optional `workingSchedule: { workingDaysPerWeek, expectedHoursPerDay, breakMinutes }`)
 Role: `hr`, `admin`
 
 ### GET /employees/:id
@@ -79,7 +79,7 @@ Errors: `NOT_FOUND`, `FORBIDDEN` (employees may only fetch self)
 Role: any authenticated (self), `hr`/`admin` (anyone)
 
 ### PATCH /employees/:id
-Request: partial `EmployeeUpdate`. Employees may change only `phone`, `address`, `avatarUrl`; HR/admin may change all fields.
+Request: partial `EmployeeUpdate` (supports `workingSchedule`). Employees may change only `phone`, `address`, `avatarUrl`; HR/admin may change all fields.
 Response `200` → updated `Employee`
 Errors: `NOT_FOUND`, `FORBIDDEN`, `INVALID_INPUT`
 
@@ -127,14 +127,15 @@ Role: `hr`, `admin`
 
 ---
 
-## Payroll
+## Payroll & Salary Engine
 
 ### GET /payroll/:employeeId
-Response `200` → `Payroll[]` (recent months, newest first). Employees: self only.
+Response `200` → `Payroll[]` (includes calculated `salaryStructure` breakdown and `payableDaysDetails`). Employees: self only.
 Role: any authenticated
 
 ### PUT /payroll/:employeeId
-Request: `{ baseSalary?, allowances?, bonus?, deductions? }` applied to the current month record.
+Request: `{ baseSalary?, allowances?, bonus?, deductions?, salaryConfig? }` applied to current month record.
+When `salaryConfig` is provided (`monthlyWage`, `basicPercentage`, `hraPercentage`, `standardAllowance`, `performanceBonusPercentage`, `ltaPercentage`, `employeePfRate`, `employerPfRate`, `professionalTax`), salary components and deductions are automatically recalculated server-side.
 Response `200` → updated `Payroll` (netPay recomputed). Creates a notification for the employee.
 Errors: `NOT_FOUND`, `FORBIDDEN`, `INVALID_INPUT`
 Role: `hr`, `admin`

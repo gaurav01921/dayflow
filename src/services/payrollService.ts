@@ -1,7 +1,22 @@
 import { api } from "@/lib/axios"
+import {
+  calculateFullPayroll,
+  calculatePayableDays,
+  calculateSalary,
+  summarizeAttendanceAndLeaves,
+} from "@/lib/payroll/index"
 import { mockApi } from "@/mocks/mockApi"
 import { USE_MOCKS } from "@/services/config"
-import type { Payroll, PayrollUpdate } from "@/types/api"
+import type {
+  FullPayrollCalculationInput,
+  FullPayrollCalculationResult,
+  PayableDaysInput,
+  PayableDaysResult,
+  Payroll,
+  PayrollUpdate,
+  SalaryCalculationInput,
+  SalaryStructure,
+} from "@/types/api"
 
 export const payrollService = {
   async list(employeeId?: string): Promise<Payroll[]> {
@@ -16,4 +31,19 @@ export const payrollService = {
     const res = await api.put<Payroll>(`/payroll/${employeeId}`, patch)
     return res.data
   },
+
+  // Pure calculation methods exposed for M4 UI & payroll components
+  calculateSalary(input: SalaryCalculationInput): SalaryStructure {
+    return calculateSalary(input)
+  },
+
+  calculatePayableDays(input: PayableDaysInput): PayableDaysResult {
+    return calculatePayableDays(input)
+  },
+
+  calculateFullPayroll(input: FullPayrollCalculationInput): FullPayrollCalculationResult {
+    return calculateFullPayroll(input)
+  },
+
+  summarizeAttendanceAndLeaves,
 }
