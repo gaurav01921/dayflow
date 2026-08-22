@@ -143,3 +143,14 @@ The following UI files currently call services or Zustand directly instead of co
 * **TypeScript result**: PASS (`./node_modules/.bin/tsc --noEmit` passed with 0 errors).
 * **Oxlint result**: PASS (`./node_modules/.bin/oxlint` passed on 79 files with 0 errors).
 * **Remaining M2 issues**: None. M2 Core Logic is complete, hardened, and ready for final team integration.
+
+---
+
+## 14. Phase 3 — Integration Support
+
+* **Hook Adoption Status**: 100% of M2 React Query hooks (`src/hooks/*`) are published, typed, and ready for UI consumption.
+* **Remaining Direct Service Calls**: 18 UI files currently call `@/services/*` directly. UI owners (Members 1 & 3) can migrate to `@/hooks` at their convenience.
+* **Integration Defects**: 0 Core Logic defects.
+* **Genuine M2 Defects**: 0.
+* **UI Issues Outside M2**: 3 minor React warnings in `sign-up-form.tsx` (`watch("role")`) and `button.tsx`/`badge.tsx` (multiple exports).
+* **Final Verification Status**: TypeScript PASS, Vite Build PASS (710ms), Oxlint 0 errors. M2 Core Logic is ready for final QA support.
