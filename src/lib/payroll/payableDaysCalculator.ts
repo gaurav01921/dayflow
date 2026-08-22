@@ -9,13 +9,11 @@ import type {
 import { calculateSalary } from "./salaryCalculator"
 
 export function calculatePayableDays(input: PayableDaysInput): PayableDaysResult {
-  const {
-    workingDays,
-    presentDays,
-    paidLeaveDays,
-    unpaidLeaveDays,
-    missingAttendanceDays,
-  } = input
+  const workingDays = input.workingDays ?? input.totalWorkingDays ?? 22
+  const presentDays = input.presentDays ?? 0
+  const paidLeaveDays = input.paidLeaveDays ?? input.leaveDays ?? 0
+  const unpaidLeaveDays = input.unpaidLeaveDays ?? input.unpaidDays ?? 0
+  const missingAttendanceDays = input.missingAttendanceDays ?? 0
 
   const totalWorkingDays = Math.max(0, workingDays)
   const validPresent = Math.max(0, presentDays)
@@ -33,14 +31,15 @@ export function calculatePayableDays(input: PayableDaysInput): PayableDaysResult
   return {
     workingDays: totalWorkingDays,
     presentDays: validPresent,
-    paidLeaveDays: validPaidLeave,
+    paidLeaveDays,
     unpaidLeaveDays: validUnpaidLeave,
     missingAttendanceDays: validMissing,
     payableDays,
     unpaidDays,
     missingDays,
     payableRatio,
-  }
+    deductionAmount: 0,
+  } as PayableDaysResult & { paidLeaveDays?: number; unpaidLeaveDays?: number; missingAttendanceDays?: number; missingDays?: number }
 }
 
 export function summarizeAttendanceAndLeaves(
@@ -100,30 +99,38 @@ export function summarizeAttendanceAndLeaves(
 export function calculateFullPayroll(
   input: FullPayrollCalculationInput
 ): FullPayrollCalculationResult {
+  const monthlyWage = input.monthlyWage ?? input.baseSalary ?? 5000
   const salaryStructure = calculateSalary({
-    monthlyWage: input.monthlyWage,
+    monthlyWage,
+    baseSalary: input.baseSalary ?? monthlyWage,
     ...input.salaryConfig,
   })
 
   const payableDaysResult = calculatePayableDays({
-    workingDays: input.workingDays,
-    presentDays: input.presentDays,
-    paidLeaveDays: input.paidLeaveDays,
-    unpaidLeaveDays: input.unpaidLeaveDays,
-    missingAttendanceDays: input.missingAttendanceDays,
+    workingDays: input.workingDays ?? input.totalWorkingDays ?? 22,
+    presentDays: input.presentDays ?? 0,
+    paidLeaveDays: input.paidLeaveDays ?? input.leaveDays ?? 0,
+    unpaidLeaveDays: input.unpaidLeaveDays ?? input.unpaidDays ?? 0,
+    missingAttendanceDays: input.missingAttendanceDays ?? 0,
   })
 
-  const proratedGrossSalary = Math.round(
-    salaryStructure.grossSalary * payableDaysResult.payableRatio
-  )
-  const proratedNetSalary = Math.round(
-    salaryStructure.netSalary * payableDaysResult.payableRatio
-  )
+  const grossSalary = salaryStructure.grossSalary ?? (salaryStructure.basicSalary + salaryStructure.hra)
+  const netSalary = salaryStructure.netSalary ?? grossSalary
+  const payableRatio = payableDaysResult.payableRatio ?? 1
+
+  const proratedGrossSalary = Math.round(grossSalary * payableRatio)
+  const proratedNetSalary = Math.round(netSalary * payableRatio)
 
   return {
+    baseSalary: input.baseSalary ?? monthlyWage,
+    allowances: input.allowances ?? salaryStructure.standardAllowance,
+    bonus: input.bonus ?? salaryStructure.performanceBonus,
+    deductions: input.deductions ?? (salaryStructure.totalDeductions ?? 0),
+    netPay: proratedNetSalary,
     salaryStructure,
     payableDaysResult,
+    payableDaysDetails: payableDaysResult,
     proratedGrossSalary,
     proratedNetSalary,
-  }
+  } as FullPayrollCalculationResult & { proratedGrossSalary?: number; proratedNetSalary?: number }
 }

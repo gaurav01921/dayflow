@@ -101,6 +101,23 @@ export interface LeaveReviewInput {
   comment?: string
 }
 
+export interface SalaryStructure {
+  monthlyWage?: number
+  basicSalary: number
+  hra: number
+  standardAllowance: number
+  performanceBonus: number
+  lta: number
+  fixedAllowance: number
+  providentFund: number
+  professionalTax: number
+  totalDeductions?: number
+  grossSalary?: number
+  netSalary?: number
+  employeePf?: number
+  employerPf?: number
+}
+
 export interface Payroll {
   id: string
   employeeId: string
@@ -120,8 +137,8 @@ export interface PayrollUpdate {
   allowances?: number
   bonus?: number
   deductions?: number
+<<<<<<< HEAD
   salaryConfig?: SalaryCalculationInput
-}
 
 export interface NotificationItem {
   id: string
