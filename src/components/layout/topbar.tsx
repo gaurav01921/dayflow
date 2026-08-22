@@ -13,10 +13,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { notificationService } from "@/services/notificationService"
-import { authService } from "@/services/authService"
-import { isManagerRole, useAuthStore } from "@/stores/authStore"
 import { cn } from "@/lib/utils"
+import { attendanceService } from "@/services/attendanceService"
+import { authService } from "@/services/authService"
+import { notificationService } from "@/services/notificationService"
+import { isManagerRole, useAuthStore } from "@/stores/authStore"
 
 export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
   const navigate = useNavigate()
@@ -30,6 +31,16 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
     refetchInterval: 30_000,
   })
   const unread = notifications.filter((n) => !n.read).length
+
+  // Query user's today attendance status to control top-right status dot color
+  const { data: attendance = [] } = useQuery({
+    queryKey: ["attendance"],
+    queryFn: () => attendanceService.list(),
+  })
+
+  const todayISO = new Date().toISOString().slice(0, 10)
+  const myTodayRecord = attendance.find((r) => r.employeeId === user?.id && r.date === todayISO)
+  const isCheckedIn = !!myTodayRecord?.checkIn
 
   async function handleLogout() {
     try {
@@ -147,24 +158,51 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="hover:bg-accent flex items-center gap-2 rounded-md px-1.5 py-1 outline-none transition-colors">
-              <Avatar className="size-8 border border-border">
-                <AvatarImage src={undefined} alt={user?.email ?? ""} />
-                <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">{initials}</AvatarFallback>
-              </Avatar>
+            <button className="hover:bg-accent flex items-center gap-2 rounded-md px-1.5 py-1 outline-none transition-colors relative cursor-pointer">
+              <div className="relative">
+                <Avatar className="size-8 border border-border">
+                  <AvatarImage src={undefined} alt={user?.email ?? ""} />
+                  <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">{initials}</AvatarFallback>
+                </Avatar>
+
+                {/* Status dot in top right bar changing color as per check-in:
+                    - GREEN (🟢) when checked in
+                    - YELLOW (🟡) when not checked in */}
+                <span
+                  title={isCheckedIn ? "Checked In (Present)" : "Not Checked In (Absent)"}
+                  className={cn(
+                    "absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-background transition-colors",
+                    isCheckedIn ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
+                  )}
+                />
+              </div>
+
               <div className="hidden text-left sm:block">
-                <p className="max-w-[140px] truncate text-sm leading-tight font-medium">
-                  {user?.employeeCode ?? ""}
-                </p>
+                <div className="flex items-center gap-1.5">
+                  <p className="max-w-[140px] truncate text-sm leading-tight font-medium">
+                    {user?.employeeCode ?? ""}
+                  </p>
+                  <span
+                    className={cn(
+                      "size-2 rounded-full",
+                      isCheckedIn ? "bg-emerald-500" : "bg-amber-500"
+                    )}
+                  />
+                </div>
                 <p className="text-muted-foreground text-xs leading-tight capitalize">
-                  {user?.role ?? ""}
+                  {user?.role ?? ""} {isCheckedIn ? "· Present" : "· Absent"}
                 </p>
               </div>
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>
-              <p className="font-semibold text-xs uppercase text-muted-foreground tracking-wider">Signed in as</p>
+              <div className="flex items-center justify-between">
+                <p className="font-semibold text-xs uppercase text-muted-foreground tracking-wider">Signed in as</p>
+                <span className={cn("text-[10px] px-1.5 py-0.5 rounded font-medium", isCheckedIn ? "bg-emerald-500/10 text-emerald-600" : "bg-amber-500/10 text-amber-600")}>
+                  {isCheckedIn ? "Checked In" : "Not Checked In"}
+                </span>
+              </div>
               <p className="truncate text-sm font-medium text-foreground mt-0.5">{user?.email}</p>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />

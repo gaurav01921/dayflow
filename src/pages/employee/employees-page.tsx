@@ -1,25 +1,30 @@
 import { useQuery } from "@tanstack/react-query"
-import { Building2, SearchX } from "lucide-react"
+import { Building2, Plus, SearchX } from "lucide-react"
 import { useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 
 import { PageHeader } from "@/components/shared/page-header"
+import { Button } from "@/components/ui/button"
 import { EmployeeCard } from "@/components/ui/employee-card"
 import { SearchBar } from "@/components/ui/search-bar"
 import { Skeleton } from "@/components/ui/skeleton"
+import { CreateEmployeeDialog } from "@/features/admin/create-employee-dialog"
 import { AttendanceTracker } from "@/features/attendance/attendance-tracker"
 import { attendanceService } from "@/services/attendanceService"
 import { employeeService } from "@/services/employeeService"
 import { leaveService } from "@/services/leaveService"
-import { useAuthStore } from "@/stores/authStore"
+import { isManagerRole, useAuthStore } from "@/stores/authStore"
 import type { AttendanceStatus, Employee } from "@/types/api"
 
 export function EmployeesDirectoryPage() {
   const navigate = useNavigate()
   const currentUser = useAuthStore((s) => s.user)
+  const isManager = isManagerRole(currentUser?.role)
+
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedDept, setSelectedDept] = useState<string>("all")
   const [selectedStatus, setSelectedStatus] = useState<string>("all")
+  const [createEmployeeOpen, setCreateEmployeeOpen] = useState(false)
 
   const { data: employees = [], isLoading: loadingEmployees } = useQuery({
     queryKey: ["employees"],
@@ -109,32 +114,47 @@ export function EmployeesDirectoryPage() {
       {/* Attendance Check In / Check Out Card */}
       <AttendanceTracker todayRecord={myTodayRecord} />
 
-      {/* Filter and Search Bar Toolbar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <SearchBar
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          onClear={() => setSearchTerm("")}
-          placeholder="Search by name, role, ID, or department…"
-          className="w-full sm:max-w-md"
-        />
+      {/* Toolbar Sub-Header matching wireframe diagram: [ NEW ] on left, Search on right */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-card/60 p-3 rounded-xl border border-border/80 shadow-2xs">
+        <Button
+          onClick={() => {
+            if (isManager) {
+              setCreateEmployeeOpen(true)
+            } else {
+              navigate("/employee/leave")
+            }
+          }}
+          className="bg-purple-600 hover:bg-purple-700 text-white font-bold tracking-wide px-5 py-2 rounded-md shadow-xs flex items-center gap-1.5 cursor-pointer shrink-0"
+        >
+          <Plus className="size-4 stroke-[3]" />
+          <span>NEW</span>
+        </Button>
 
-        {/* Status Filter Badges */}
-        <div className="flex flex-wrap items-center gap-1.5 text-xs">
-          <span className="text-muted-foreground font-medium mr-1 hidden md:inline">Status:</span>
-          {(["all", "present", "absent", "leave"] as const).map((st) => (
-            <button
-              key={st}
-              onClick={() => setSelectedStatus(st)}
-              className={`rounded-full px-3 py-1 font-medium capitalize transition-colors cursor-pointer ${
-                selectedStatus === st
-                  ? "bg-primary text-primary-foreground shadow-xs"
-                  : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
-              }`}
-            >
-              {st === "all" ? "All Status" : st === "leave" ? "On Leave" : st}
-            </button>
-          ))}
+        <div className="flex flex-1 items-center gap-3 justify-end w-full sm:w-auto">
+          <SearchBar
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onClear={() => setSearchTerm("")}
+            placeholder="Search employee by name, ID, role, or department…"
+            className="w-full sm:max-w-md"
+          />
+
+          {/* Status Filter Badges */}
+          <div className="hidden lg:flex items-center gap-1 text-xs">
+            {(["all", "present", "absent", "leave"] as const).map((st) => (
+              <button
+                key={st}
+                onClick={() => setSelectedStatus(st)}
+                className={`rounded-full px-2.5 py-1 font-medium capitalize transition-colors cursor-pointer ${
+                  selectedStatus === st
+                    ? "bg-primary text-primary-foreground shadow-xs"
+                    : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
+                }`}
+              >
+                {st === "all" ? "All" : st === "leave" ? "On Leave" : st}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -215,6 +235,8 @@ export function EmployeesDirectoryPage() {
           ))}
         </div>
       )}
+
+      <CreateEmployeeDialog open={createEmployeeOpen} onOpenChange={setCreateEmployeeOpen} />
     </div>
   )
 }

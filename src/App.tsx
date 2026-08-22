@@ -20,7 +20,7 @@ import { HrLeavesPage } from "@/pages/hr/leaves-page"
 import { HrPayrollPage } from "@/pages/hr/payroll-page"
 import { HrReportsPage } from "@/pages/hr/reports-page"
 import { MyLeavesPage } from "@/features/leave/my-leaves"
-import { isManagerRole, useAuthStore } from "@/stores/authStore"
+import { useAuthStore } from "@/stores/authStore"
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -46,7 +46,7 @@ function RoleHomeRedirect() {
   const user = useAuthStore((s) => s.user)
   if (!user) return <Navigate to="/login" replace />
   if (user.mustChangePassword) return <Navigate to="/change-password" replace />
-  return <Navigate to={isManagerRole(user.role) ? "/hr/dashboard" : "/employee/employees"} replace />
+  return <Navigate to="/employee/employees" replace />
 }
 
 export function App() {
