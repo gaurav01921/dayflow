@@ -54,7 +54,8 @@ export function SignInForm() {
         return
       }
       toast.success(`Welcome back, ${user.employeeCode}`)
-      navigate(user.role === "employee" ? "/employee/dashboard" : "/hr/dashboard", {
+      // Redirect employee to /employee/employees Directory page
+      navigate(user.role === "employee" ? "/employee/employees" : "/hr/dashboard", {
         replace: true,
       })
     },
@@ -67,7 +68,7 @@ export function SignInForm() {
     }
     return (
       <Navigate
-        to={user.role === "employee" ? "/employee/dashboard" : "/hr/dashboard"}
+        to={user.role === "employee" ? "/employee/employees" : "/hr/dashboard"}
         replace
       />
     )
@@ -79,113 +80,117 @@ export function SignInForm() {
   }
 
   return (
-    <Card className="border-border/60 shadow-xl shadow-black/10 backdrop-blur-sm">
-      <CardHeader className="pb-5 text-center">
-        <CardTitle className="text-2xl font-bold tracking-tight">Sign In</CardTitle>
-        <CardDescription className="text-sm">
-          Enter your system Login ID or Work Email to access DayFlow.
+    <Card className="relative overflow-hidden border border-indigo-500/30 border-t-indigo-400/70 bg-slate-900/90 shadow-[0_0_50px_rgba(99,102,241,0.2)] backdrop-blur-xl">
+      {/* Top light glow bar */}
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
+      <CardHeader className="pb-4 text-center">
+        <CardTitle className="text-xl font-bold tracking-tight text-white">Account Sign In</CardTitle>
+        <CardDescription className="text-xs text-slate-400">
+          Enter your System Login ID (e.g. ODO20260001) or Work Email to access DayFlow.
         </CardDescription>
       </CardHeader>
 
-      <CardContent>
-        <form className="space-y-5" onSubmit={handleSubmit((v) => mutation.mutate(v))}>
+      <CardContent className="space-y-4">
+        <form className="space-y-4" onSubmit={handleSubmit((v) => mutation.mutate(v))}>
           {/* Email / Login ID */}
           <div className="space-y-1.5">
-            <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider text-slate-300">
               Login ID / Email
             </Label>
             <div className="relative">
-              <Mail className="text-muted-foreground absolute top-2.5 left-3 size-4" />
+              <Mail className="text-slate-400 absolute top-2.5 left-3 size-4" />
               <Input
                 id="email"
                 type="text"
                 placeholder="ODO20260001 or employee@dayflow.demo"
                 autoComplete="username"
-                className="pl-9 h-10"
+                className="pl-9 h-10 bg-slate-950/60 border-slate-800 text-slate-100 placeholder:text-slate-500 focus:border-indigo-500 focus:ring-indigo-500/20"
                 {...register("email")}
               />
             </div>
             {errors.email ? (
-              <p className="text-destructive text-xs mt-1">{errors.email.message}</p>
+              <p className="text-rose-400 text-xs mt-1">{errors.email.message}</p>
             ) : null}
           </div>
 
           {/* Password */}
           <div className="space-y-1.5">
-            <Label htmlFor="password" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <Label htmlFor="password" className="text-xs font-semibold uppercase tracking-wider text-slate-300">
               Password
             </Label>
             <div className="relative">
-              <Lock className="text-muted-foreground absolute top-2.5 left-3 size-4" />
+              <Lock className="text-slate-400 absolute top-2.5 left-3 size-4" />
               <Input
                 id="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
                 autoComplete="current-password"
-                className="pl-9 pr-10 h-10 font-mono"
+                className="pl-9 pr-10 h-10 font-mono bg-slate-950/60 border-slate-800 text-slate-100 placeholder:text-slate-500 focus:border-indigo-500 focus:ring-indigo-500/20"
                 {...register("password")}
               />
               <button
                 type="button"
                 tabIndex={-1}
                 onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
               </button>
             </div>
             {errors.password ? (
-              <p className="text-destructive text-xs mt-1">{errors.password.message}</p>
+              <p className="text-rose-400 text-xs mt-1">{errors.password.message}</p>
             ) : null}
           </div>
 
-          {/* Submit */}
+          {/* Submit Button */}
           <Button
             type="submit"
-            className="w-full h-10 font-semibold tracking-wide shadow-md shadow-primary/20"
+            className="w-full h-10 font-semibold tracking-wide bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-md shadow-indigo-600/30 cursor-pointer"
             disabled={mutation.isPending}
           >
             {mutation.isPending ? "Signing in…" : "SIGN IN"}
           </Button>
         </form>
 
-        {/* Demo Accounts Quick-Fill */}
-        <div className="bg-muted/40 border border-border/60 mt-5 rounded-xl p-3.5 space-y-2">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-            Demo Credentials — Click to Autofill
+        {/* Quick Demo Autofill */}
+        <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-3 space-y-2">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-400 flex items-center justify-between">
+            <span>Quick Demo Login</span>
+            <span className="text-[9px] text-slate-500 font-normal">Click to autofill</span>
           </p>
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
               onClick={() => fillDemo("employee@dayflow.demo", "Demo@123")}
-              className="flex items-center gap-2 rounded-lg border border-border/60 bg-background/80 hover:bg-accent/80 p-2.5 text-left transition-all hover:border-primary/40 cursor-pointer"
+              className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-900/90 hover:bg-slate-800/90 p-2 text-left transition-all hover:border-indigo-500/40 cursor-pointer"
             >
-              <UserCheck className="size-4 text-primary shrink-0" />
+              <UserCheck className="size-4 text-emerald-400 shrink-0" />
               <div className="min-w-0">
-                <p className="text-xs font-semibold text-foreground truncate">Employee</p>
-                <p className="text-[10px] text-muted-foreground truncate">Aarav Mehta</p>
+                <p className="text-xs font-semibold text-slate-200 truncate">Employee</p>
+                <p className="text-[10px] text-slate-400 truncate">Aarav Mehta</p>
               </div>
             </button>
+
             <button
               type="button"
               onClick={() => fillDemo("hr@dayflow.demo", "Demo@123")}
-              className="flex items-center gap-2 rounded-lg border border-border/60 bg-background/80 hover:bg-accent/80 p-2.5 text-left transition-all hover:border-primary/40 cursor-pointer"
+              className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-900/90 hover:bg-slate-800/90 p-2 text-left transition-all hover:border-indigo-500/40 cursor-pointer"
             >
-              <Shield className="size-4 text-primary shrink-0" />
+              <Shield className="size-4 text-indigo-400 shrink-0" />
               <div className="min-w-0">
-                <p className="text-xs font-semibold text-foreground truncate">HR / Admin</p>
-                <p className="text-[10px] text-muted-foreground truncate">Priya Sharma</p>
+                <p className="text-xs font-semibold text-slate-200 truncate">HR / Admin</p>
+                <p className="text-[10px] text-slate-400 truncate">Priya Sharma</p>
               </div>
             </button>
           </div>
         </div>
 
-        {/* Informational notice: Employees do not self-register */}
-        <div className="mt-5 rounded-lg border border-border/60 bg-muted/20 p-3 text-center text-xs text-muted-foreground">
-          <p className="font-semibold text-foreground">Employee Accounts</p>
-          <p className="mt-0.5">
-            Accounts are generated by HR / Admin. Contact your HR administrator if you need your system Login ID or a password reset.
+        {/* Employee Registration Notice */}
+        <div className="rounded-lg border border-slate-800/60 bg-slate-950/40 p-3 text-center text-xs text-slate-400 space-y-0.5">
+          <p className="font-semibold text-slate-200">Employee Registration Notice</p>
+          <p className="text-[11px] text-slate-400">
+            Employee accounts are generated centrally by HR/Admin with an assigned Login ID &amp; temporary password.
           </p>
         </div>
       </CardContent>
