@@ -102,7 +102,7 @@ export interface LeaveReviewInput {
 }
 
 export interface SalaryStructure {
-  monthlyWage?: number
+  monthlyWage: number
   basicSalary: number
   hra: number
   standardAllowance: number
@@ -111,11 +111,11 @@ export interface SalaryStructure {
   fixedAllowance: number
   providentFund: number
   professionalTax: number
-  totalDeductions?: number
-  grossSalary?: number
-  netSalary?: number
-  employeePf?: number
-  employerPf?: number
+  grossSalary: number
+  employeePf: number
+  employerPf: number
+  totalDeductions: number
+  netSalary: number
 }
 
 export interface Payroll {
@@ -137,8 +137,8 @@ export interface PayrollUpdate {
   allowances?: number
   bonus?: number
   deductions?: number
-<<<<<<< HEAD
   salaryConfig?: SalaryCalculationInput
+}
 
 export interface NotificationItem {
   id: string
@@ -236,22 +236,6 @@ export interface SalaryCalculationInput {
   professionalTax?: number         // default 200
 }
 
-export interface SalaryStructure {
-  monthlyWage: number
-  basicSalary: number
-  hra: number
-  standardAllowance: number
-  performanceBonus: number
-  lta: number
-  fixedAllowance: number
-  grossSalary: number
-  employeePf: number
-  employerPf: number
-  professionalTax: number
-  totalDeductions: number
-  netSalary: number
-}
-
 // ── Payable Days Types ──
 
 export interface PayableDaysInput {
@@ -272,6 +256,7 @@ export interface PayableDaysResult {
   unpaidDays: number
   missingDays: number
   payableRatio: number
+  deductionAmount: number
 }
 
 // ── Full Payroll Calculation Types ──
@@ -283,12 +268,21 @@ export interface FullPayrollCalculationInput {
   paidLeaveDays: number
   unpaidLeaveDays: number
   missingAttendanceDays: number
+  allowances?: number
+  bonus?: number
+  deductions?: number
   salaryConfig?: Omit<SalaryCalculationInput, "monthlyWage">
 }
 
 export interface FullPayrollCalculationResult {
+  baseSalary: number
+  allowances: number
+  bonus: number
+  deductions: number
+  netPay: number
   salaryStructure: SalaryStructure
   payableDaysResult: PayableDaysResult
+  payableDaysDetails: PayableDaysResult
   proratedGrossSalary: number
   proratedNetSalary: number
 }

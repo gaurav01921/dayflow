@@ -28,9 +28,9 @@ export function StatCard({
   tone = "primary",
 }: StatCardProps) {
   return (
-    <Card className="gap-0 py-0">
-      <CardContent className="flex items-center gap-4 px-5 py-5">
-        <div className={cn("flex size-10 shrink-0 items-center justify-center rounded-lg", TONES[tone])}>
+    <Card className="group gap-0 overflow-hidden py-0 shadow-sm transition-shadow hover:shadow-md">
+      <CardContent className="relative flex items-center gap-4 px-5 py-5">
+        <div className={cn("flex size-11 shrink-0 items-center justify-center rounded-xl transition-transform group-hover:scale-105", TONES[tone])}>
           {Icon ? (
             <Icon className="size-5" />
           ) : null}
@@ -39,7 +39,7 @@ export function StatCard({
           <p className="text-muted-foreground truncate text-xs font-medium tracking-wide uppercase">
             {title}
           </p>
-          <p className="mt-0.5 text-2xl font-semibold tracking-tight tabular-nums">{value}</p>
+          <p className="mt-0.5 text-2xl font-bold tracking-tight tabular-nums">{value}</p>
           {hint ? <p className="text-muted-foreground mt-0.5 text-xs">{hint}</p> : null}
         </div>
       </CardContent>

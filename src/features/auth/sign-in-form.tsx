@@ -55,7 +55,7 @@ export function SignInForm() {
       }
       toast.success(`Welcome back, ${user.employeeCode}`)
       // Redirect employee to /employee/employees Directory page
-      navigate(user.role === "employee" ? "/employee/employees" : "/hr/dashboard", {
+      navigate(user.role === "employee" ? "/employee/dashboard" : "/hr/dashboard", {
         replace: true,
       })
     },
@@ -68,7 +68,7 @@ export function SignInForm() {
     }
     return (
       <Navigate
-        to={user.role === "employee" ? "/employee/employees" : "/hr/dashboard"}
+        to={user.role === "employee" ? "/employee/dashboard" : "/hr/dashboard"}
         replace
       />
     )
@@ -80,11 +80,11 @@ export function SignInForm() {
   }
 
   return (
-    <Card className="relative overflow-hidden border border-indigo-500/30 border-t-indigo-400/70 bg-slate-900/90 shadow-[0_0_50px_rgba(99,102,241,0.2)] backdrop-blur-xl">
+    <Card className="relative overflow-hidden border border-white/10 border-t-indigo-400/70 bg-slate-900/95 shadow-2xl shadow-indigo-950/50 backdrop-blur-xl">
       {/* Top light glow bar */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
       <CardHeader className="pb-4 text-center">
-        <CardTitle className="text-xl font-bold tracking-tight text-white">Account Sign In</CardTitle>
+        <CardTitle className="text-xl font-bold tracking-tight text-white">Sign in to your workspace</CardTitle>
         <CardDescription className="text-xs text-slate-400">
           Enter your System Login ID (e.g. ODO20260001) or Work Email to access DayFlow.
         </CardDescription>

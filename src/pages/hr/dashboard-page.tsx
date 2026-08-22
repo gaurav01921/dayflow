@@ -29,8 +29,10 @@ import { attendanceService } from "@/services/attendanceService"
 import { notificationService } from "@/services/notificationService"
 import { toISODate } from "@/lib/utils"
 import type { Employee, LeaveRequest } from "@/types/api"
+import { useAuthStore } from "@/stores/authStore"
 
 export function HrDashboardPage() {
+  const user = useAuthStore((state) => state.user)
 
   const { data: stats } = useQuery({
     queryKey: ["dashboard-stats"],
@@ -74,8 +76,22 @@ export function HrDashboardPage() {
     <>
       <PageHeader
         title="HR Dashboard"
-        description="Overview of your workforce and pending actions."
+        description="A clear view of your workforce, approvals, and payroll operations."
       />
+
+      <section className="relative overflow-hidden rounded-2xl bg-slate-950 px-6 py-7 text-white shadow-lg sm:px-8">
+        <div className="relative z-10 max-w-2xl">
+          <p className="text-primary-foreground/65 text-xs font-semibold uppercase tracking-[0.18em]">Good morning</p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+            Welcome back{user?.employeeCode ? `, ${user.employeeCode}` : ""}.
+          </h2>
+          <p className="text-slate-300 mt-2 max-w-xl text-sm leading-relaxed">
+            Stay ahead of today&apos;s people operations. Review requests, keep attendance accurate, and make payroll decisions with confidence.
+          </p>
+        </div>
+        <div className="absolute -right-16 -top-24 size-72 rounded-full bg-primary/30 blur-3xl" />
+        <div className="absolute -bottom-32 right-24 size-64 rounded-full bg-cyan-400/10 blur-3xl" />
+      </section>
 
       {/* Stat Cards */}
       {stats ? (
@@ -85,37 +101,42 @@ export function HrDashboardPage() {
             value={stats.totalEmployees}
             icon={Users}
             tone="primary"
+            hint="Across your workspace"
           />
           <StatCard
             title="Present Today"
             value={stats.presentToday}
             icon={CalendarCheck2}
             tone="success"
+            hint="Checked in today"
           />
           <StatCard
             title="On Leave"
             value={stats.onLeaveToday}
             icon={PlaneTakeoff}
             tone="info"
+            hint="Away today"
           />
           <StatCard
             title="Pending Leaves"
             value={stats.pendingLeaveRequests}
             icon={Clock}
             tone={stats.pendingLeaveRequests > 0 ? "warning" : "info"}
+            hint="Needs attention"
           />
           <StatCard
             title="Monthly Payroll"
             value={`$${(stats.monthlyPayrollTotal / 1000).toFixed(1)}k`}
             icon={Banknote}
             tone="info"
+            hint="Current month"
           />
         </div>
       ) : null}
 
       {/* Pending Leave Requests — the demo centerpiece */}
-      <Card>
-        <CardHeader className="flex-row items-center justify-between">
+      <Card className="overflow-hidden">
+        <CardHeader className="flex-row items-center justify-between border-b bg-muted/20 pb-5">
           <div>
             <CardTitle className="flex items-center gap-2">
               <PlaneTakeoff className="size-5" />
@@ -137,7 +158,7 @@ export function HrDashboardPage() {
               All caught up! No pending leave requests.
             </p>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2 pt-1">
               {pendingLeaves.slice(0, 5).map((leave) => (
                 <LeaveRequestRow
                   key={leave.id}
@@ -153,11 +174,11 @@ export function HrDashboardPage() {
       {/* Quick Actions + Recent Activity */}
       <div className="grid gap-4 sm:grid-cols-2">
         {/* Quick Actions */}
-        <Card>
-          <CardHeader>
+        <Card className="h-full">
+          <CardHeader className="border-b pb-5">
             <CardTitle>Quick Actions</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-2 pt-1">
             {[
               { to: "/hr/leaves", label: "Review Leave Requests", icon: PlaneTakeoff, desc: pendingLeaves.length > 0 ? `${pendingLeaves.length} pending` : "All reviewed" },
               { to: "/hr/employees", label: "Manage Employees", icon: Users, desc: `${employees.length} team members` },
@@ -166,15 +187,15 @@ export function HrDashboardPage() {
               { to: "/hr/reports", label: "View Reports", icon: LayoutDashboard, desc: "Analytics & charts" },
             ].map((action) => (
               <Link key={action.to} to={action.to}>
-                <div className="hover:bg-muted/50 flex items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors">
-                  <div className="bg-primary/10 text-primary flex size-8 items-center justify-center rounded-lg">
+                <div className="group hover:border-primary/30 hover:bg-primary/[0.03] flex items-center gap-3 rounded-xl border border-border/70 px-3 py-3 transition-colors">
+                  <div className="bg-primary/10 text-primary flex size-9 items-center justify-center rounded-xl">
                     <action.icon className="size-4" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium">{action.label}</p>
                     <p className="text-muted-foreground text-xs">{action.desc}</p>
                   </div>
-                  <ArrowRight className="text-muted-foreground size-4 shrink-0" />
+                  <ArrowRight className="text-muted-foreground size-4 shrink-0 transition-transform group-hover:translate-x-0.5" />
                 </div>
               </Link>
             ))}
@@ -182,12 +203,12 @@ export function HrDashboardPage() {
         </Card>
 
         {/* Recent Activity */}
-        <Card>
-          <CardHeader>
+        <Card className="h-full">
+          <CardHeader className="border-b pb-5">
             <CardTitle>Recent Activity</CardTitle>
             <CardDescription>Latest updates and notifications</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-3 pt-1">
             {recentNotifications.length === 0 ? (
               <p className="text-muted-foreground py-6 text-center text-sm">No recent activity.</p>
             ) : (

@@ -8,9 +8,10 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, description, actions }: PageHeaderProps) {
   return (
-    <div className="flex flex-wrap items-start justify-between gap-4">
+    <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border/60 pb-5">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">{title}</h1>
+        <p className="text-primary mb-1 text-[10px] font-bold uppercase tracking-[0.18em]">DayFlow workspace</p>
+        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{title}</h1>
         {description ? (
           <p className="text-muted-foreground mt-1 text-sm">{description}</p>
         ) : null}

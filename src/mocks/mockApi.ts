@@ -457,7 +457,7 @@ export const mockApi = {
     )
     if (!record) {
       const salaryStructure = calculateSalary({ monthlyWage: 50000 })
-      record = {
+      const newRecord: Payroll = {
         id: nextId("pay"),
         employeeId,
         month,
@@ -469,22 +469,25 @@ export const mockApi = {
         paymentDate: `${month}-28`,
         salaryStructure,
       }
-      mockDb.payroll.push(record)
+      mockDb.payroll.push(newRecord)
+      record = newRecord
     }
+
+    const currentRecord = record
 
     if (patch.salaryConfig) {
       const salaryStructure = calculateSalary(patch.salaryConfig)
-      record.salaryStructure = salaryStructure
-      record.baseSalary = salaryStructure.basicSalary
-      record.allowances =
+      currentRecord.salaryStructure = salaryStructure
+      currentRecord.baseSalary = salaryStructure.basicSalary
+      currentRecord.allowances =
         salaryStructure.hra + salaryStructure.standardAllowance + salaryStructure.fixedAllowance
-      record.bonus = patch.bonus ?? record.bonus ?? 0
-      record.deductions = salaryStructure.totalDeductions
-      record.netPay = salaryStructure.netSalary + record.bonus
+      currentRecord.bonus = patch.bonus ?? currentRecord.bonus
+      currentRecord.deductions = salaryStructure.totalDeductions
+      currentRecord.netPay = salaryStructure.netSalary + currentRecord.bonus
     } else {
-      Object.assign(record, patch)
-      record.netPay =
-        record.baseSalary + record.allowances + record.bonus - record.deductions
+      Object.assign(currentRecord, patch)
+      currentRecord.netPay =
+        currentRecord.baseSalary + currentRecord.allowances + currentRecord.bonus - currentRecord.deductions
     }
 
     pushNotification(
@@ -493,7 +496,7 @@ export const mockApi = {
       `Your salary details for ${month} were updated by HR.`,
       "info"
     )
-    return delay({ ...record })
+    return delay({ ...currentRecord })
   },
 
   // ---------- notifications ----------

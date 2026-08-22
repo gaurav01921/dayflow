@@ -62,8 +62,20 @@ export function EmployeeDashboardPage() {
     <div className="space-y-6">
       <PageHeader
         title={`Welcome back, ${user?.employeeCode ?? "Team Member"}`}
-        description="Overview of your daily workspace status, attendance tracking, and leave entitlements."
+        description="Your personal workspace for attendance, time off, and compensation."
       />
+
+      <section className="relative overflow-hidden rounded-2xl bg-slate-950 px-6 py-7 text-white shadow-lg sm:px-8">
+        <div className="relative z-10 max-w-xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-indigo-200">Your workspace</p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">Make today count.</h2>
+          <p className="mt-2 text-sm leading-relaxed text-slate-300">
+            Keep your workday up to date and find everything you need in one calm, focused workspace.
+          </p>
+        </div>
+        <div className="absolute -right-16 -top-24 size-72 rounded-full bg-primary/30 blur-3xl" />
+        <div className="absolute -bottom-32 right-24 size-64 rounded-full bg-cyan-400/10 blur-3xl" />
+      </section>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
@@ -106,7 +118,7 @@ export function EmployeeDashboardPage() {
           { to: "/employee/payroll", label: "Payroll & Compensation", desc: "Monthly slips and wage breakdown", icon: Banknote, color: "text-primary bg-primary/10" },
         ].map((item) => (
           <Link key={item.to} to={item.to}>
-            <Card className="hover:border-primary/50 h-full transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md cursor-pointer border-border/80">
+            <Card className="group h-full cursor-pointer border-border/70 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md">
               <CardContent className="flex items-center justify-between p-5">
                 <div className="flex items-center gap-3.5">
                   <div className={`flex size-10 items-center justify-center rounded-xl ${item.color}`}>
@@ -117,7 +129,7 @@ export function EmployeeDashboardPage() {
                     <p className="text-muted-foreground text-xs">{item.desc}</p>
                   </div>
                 </div>
-                <ArrowRight className="text-muted-foreground size-4 shrink-0" />
+                <ArrowRight className="text-muted-foreground size-4 shrink-0 transition-transform group-hover:translate-x-0.5" />
               </CardContent>
             </Card>
           </Link>

@@ -42,8 +42,8 @@ export function EmployeePayrollPage() {
         </div>
       ) : null}
 
-      <Card>
-        <CardHeader>
+      <Card className="overflow-hidden">
+        <CardHeader className="border-b bg-muted/20 pb-5">
           <CardTitle>Salary slips</CardTitle>
           <CardDescription>Last months on record</CardDescription>
         </CardHeader>
@@ -61,7 +61,7 @@ export function EmployeePayrollPage() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead>
+                <thead className="bg-muted/30">
                   <tr className="border-b text-left">
                     <th className="text-muted-foreground px-3 py-2 font-medium">Month</th>
                     <th className="text-muted-foreground px-3 py-2 font-medium">Base</th>
@@ -74,7 +74,7 @@ export function EmployeePayrollPage() {
                 </thead>
                 <tbody>
                   {(payslips as Payroll[]).map((p) => (
-                    <tr key={p.id} className="hover:bg-muted/50 border-b last:border-0">
+                    <tr key={p.id} className="border-b transition-colors last:border-0 hover:bg-primary/[0.03]">
                       <td className="px-3 py-2.5 font-medium">{p.month}</td>
                       <td className="px-3 py-2.5 tabular-nums">{formatCurrency(p.baseSalary)}</td>
                       <td className="px-3 py-2.5 tabular-nums">{formatCurrency(p.allowances)}</td>

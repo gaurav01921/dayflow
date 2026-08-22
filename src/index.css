@@ -152,5 +152,6 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
+    background-image: radial-gradient(circle at 0% 0%, color-mix(in oklab, var(--primary) 5%, transparent), transparent 28rem);
   }
 }

@@ -3,7 +3,6 @@ import type { SalaryCalculationInput, SalaryStructure } from "@/types/api"
 export function calculateSalary(input: SalaryCalculationInput): SalaryStructure {
   const {
     monthlyWage,
-    baseSalary,
     basicPercentage = 50,
     hraPercentage = 50,
     standardAllowance: rawStandardAllowance = 4167,
@@ -14,7 +13,7 @@ export function calculateSalary(input: SalaryCalculationInput): SalaryStructure 
     professionalTax: rawProfTax = 200,
   } = input
 
-  const wage = Math.max(0, Math.round(monthlyWage ?? baseSalary ?? 5000))
+  const wage = Math.max(0, Math.round(monthlyWage))
 
   // Basic: 50% of Monthly Wage
   const basicSalary = Math.round(wage * (basicPercentage / 100))

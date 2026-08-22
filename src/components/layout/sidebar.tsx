@@ -88,11 +88,27 @@ export function Sidebar({
   return (
     <>
       {/* Desktop */}
-      <aside className="bg-sidebar border-sidebar-border hidden w-60 shrink-0 flex-col gap-6 border-r p-4 md:flex">
-        <Brand />
-        <NavLinks items={items} />
-        <p className="text-sidebar-foreground/40 mt-auto px-3 text-xs">
-          Hackathon build · mock mode
+      <aside className="bg-sidebar border-sidebar-border fixed inset-y-0 left-0 z-30 hidden w-60 flex-col gap-8 border-r p-4 md:flex">
+        <div className="border-sidebar-border border-b pb-5">
+          <Brand />
+          <p className="text-sidebar-foreground/45 mt-3 px-2 text-[11px] font-medium uppercase tracking-[0.18em]">
+            Workforce operations
+          </p>
+        </div>
+        <div>
+          <p className="text-sidebar-foreground/45 mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.16em]">
+            Workspace
+          </p>
+          <NavLinks items={items} />
+        </div>
+        <div className="bg-sidebar-accent/70 border-sidebar-border mt-auto rounded-xl border p-3">
+          <p className="text-xs font-semibold">DayFlow workspace</p>
+          <p className="text-sidebar-foreground/55 mt-1 text-[11px] leading-relaxed">
+            Your people, payroll, and attendance in one place.
+          </p>
+        </div>
+        <p className="text-sidebar-foreground/35 px-3 text-[10px]">
+          v1.0 · mock mode
         </p>
       </aside>
 
@@ -100,7 +116,7 @@ export function Sidebar({
       {open ? (
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-          <aside className="bg-background relative flex h-full w-64 flex-col gap-6 border-r p-4">
+          <aside className="bg-background relative flex h-full w-72 flex-col gap-6 border-r p-4 shadow-2xl">
             <div className="flex items-center justify-between">
               <Brand />
               <Button variant="ghost" size="icon" onClick={onClose}>

@@ -16,7 +16,7 @@ import {
 import { cn } from "@/lib/utils"
 import { attendanceService } from "@/services/attendanceService"
 import { authService } from "@/services/authService"
-import { notificationService } from "@/services/notificationService"
+import { useNotifications } from "@/hooks/useNotifications"
 import { isManagerRole, useAuthStore } from "@/stores/authStore"
 
 export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
@@ -25,12 +25,7 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
   const clear = useAuthStore((s) => s.clear)
   const isManager = isManagerRole(user?.role)
 
-  const { data: notifications = [] } = useQuery({
-    queryKey: ["notifications"],
-    queryFn: notificationService.list,
-    refetchInterval: 30_000,
-  })
-  const unread = notifications.filter((n) => !n.read).length
+  const { notifications, unreadCount: unread, markAsRead } = useNotifications()
 
   // Query user's today attendance status to control top-right status dot color
   const { data: attendance = [] } = useQuery({
@@ -65,7 +60,7 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
       .toUpperCase() ?? "DF"
 
   return (
-    <header className="bg-background/95 supports-[backdrop-filter]:bg-background/80 sticky top-0 z-40 flex h-14 items-center justify-between gap-3 border-b px-4 backdrop-blur">
+    <header className="bg-background/90 supports-[backdrop-filter]:bg-background/75 sticky top-0 z-20 flex h-16 items-center justify-between gap-3 border-b px-4 shadow-sm backdrop-blur sm:px-6">
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" className="md:hidden" onClick={onMenuClick}>
           <Menu className="size-5" />
@@ -78,7 +73,7 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
         </Link>
 
         {/* Top quick navigation links matching reference wireframe */}
-        <nav className="hidden lg:flex items-center gap-1 ml-2">
+        <nav className="hidden items-center gap-1 ml-2 lg:flex">
           <NavLink
             to={employeesPath}
             className={({ isActive }) =>
@@ -145,7 +140,13 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
               </p>
             ) : (
               notifications.slice(0, 5).map((n) => (
-                <DropdownMenuItem key={n.id} className="flex-col items-start gap-0.5">
+                <DropdownMenuItem
+                  key={n.id}
+                  className={cn("flex-col items-start gap-0.5", !n.read && "bg-primary/5")}
+                  onSelect={() => {
+                    if (!n.read) void markAsRead(n.id)
+                  }}
+                >
                   <span className="text-sm font-medium">{n.title}</span>
                   <span className="text-muted-foreground line-clamp-2 text-xs">
                     {n.message}
