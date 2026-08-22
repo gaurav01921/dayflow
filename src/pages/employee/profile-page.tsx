@@ -1,13 +1,12 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Briefcase, FileText, Mail, MapPin, Phone } from "lucide-react"
+import { FileText, Mail, Phone } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { z } from "zod"
 
 import { PageHeader } from "@/components/shared/page-header"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -18,6 +17,7 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { EmployeeDetailsCard } from "@/features/employees/employee-details-card"
 import { toUserMessage } from "@/lib/api-error"
 import { formatDate } from "@/lib/utils"
 import { employeeService } from "@/services/employeeService"
@@ -67,18 +67,21 @@ export function EmployeeProfilePage() {
   return (
     <>
       <PageHeader
-        title="My profile"
+        title="My Profile"
         description={
           manager
             ? "Your account details."
-            : "You can edit your phone and address. HR manages job details."
+            : "Update your contact information. HR manages job details and role parameters."
         }
       />
 
+      <EmployeeDetailsCard employee={employee} />
+
       <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
+        <Card className="lg:col-span-2 border-border/80 shadow-sm">
           <CardHeader>
-            <CardTitle>Personal details</CardTitle>
+            <CardTitle className="text-base font-semibold">Update Contact Details</CardTitle>
+            <CardDescription>Keep your personal phone number and home address updated.</CardDescription>
           </CardHeader>
           <CardContent>
             <form
@@ -87,7 +90,7 @@ export function EmployeeProfilePage() {
             >
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone</Label>
+                  <Label htmlFor="phone">Phone Number</Label>
                   <div className="relative">
                     <Phone className="text-muted-foreground absolute top-2.5 left-2.5 size-4" />
                     <Input id="phone" className="pl-8" {...form.register("phone")} />
@@ -99,7 +102,7 @@ export function EmployeeProfilePage() {
                   ) : null}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">Work Email</Label>
                   <div className="relative">
                     <Mail className="text-muted-foreground absolute top-2.5 left-2.5 size-4" />
                     <Input id="email" className="pl-8" value={employee.email} disabled />
@@ -107,7 +110,7 @@ export function EmployeeProfilePage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="address">Address</Label>
+                <Label htmlFor="address">Residential Address</Label>
                 <Input id="address" {...form.register("address")} />
                 {form.formState.errors.address ? (
                   <p className="text-destructive text-xs">
@@ -116,48 +119,23 @@ export function EmployeeProfilePage() {
                 ) : null}
               </div>
               <Button type="submit" disabled={mutation.isPending}>
-                {mutation.isPending ? "Saving…" : "Save changes"}
+                {mutation.isPending ? "Saving…" : "Save Changes"}
               </Button>
             </form>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-border/80 shadow-sm">
           <CardHeader>
-            <CardTitle>Job details</CardTitle>
-            <CardDescription>Managed by HR</CardDescription>
+            <CardTitle className="text-base font-semibold">Documents on Record</CardTitle>
+            <CardDescription>HR records and verified certificates</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            <Row label="Employee ID" value={employee.employeeCode} />
-            <Row
-              label="Name"
-              value={`${employee.firstName} ${employee.lastName}`}
-            />
-            <Row label="Department" value={employee.department} />
-            <Row label="Position" value={employee.position} />
-            <Row
-              label="Employment"
-              value={<Badge variant="secondary">{employee.employmentType}</Badge>}
-            />
-            <Row label="Joined" value={formatDate(employee.joinDate)} />
-            <Row
-              label="Role"
-              value={<Badge variant="info">{employee.role.toUpperCase()}</Badge>}
-            />
-          </CardContent>
-        </Card>
-
-        <Card className="lg:col-span-3">
-          <CardHeader>
-            <CardTitle>Documents</CardTitle>
-            <CardDescription>Files on record with HR</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <CardContent className="space-y-3">
             {employee.documents.length === 0 ? (
               <p className="text-muted-foreground text-sm">No documents uploaded yet.</p>
             ) : (
               employee.documents.map((doc) => (
-                <div key={doc.id} className="bg-muted/40 flex items-center gap-3 rounded-lg border px-3 py-2.5">
+                <div key={doc.id} className="bg-muted/30 flex items-center gap-3 rounded-lg border border-border/50 px-3 py-2.5">
                   <FileText className="text-primary size-4 shrink-0" />
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium">{doc.name}</p>
@@ -172,21 +150,5 @@ export function EmployeeProfilePage() {
         </Card>
       </div>
     </>
-  )
-}
-
-function Row({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="flex items-center justify-between gap-3 border-b pb-2 last:border-b-0 last:pb-0">
-      <span className="text-muted-foreground flex items-center gap-1.5 text-xs">
-        {label === "Department" || label === "Position" ? (
-          <Briefcase className="size-3.5" />
-        ) : label === "Joined" ? (
-          <MapPin className="size-3.5" />
-        ) : null}
-        {label}
-      </span>
-      <span className="font-medium">{value}</span>
-    </div>
   )
 }
