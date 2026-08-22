@@ -1,12 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
+import { queryKeys } from "@/hooks/queryKeys"
 import { notificationService } from "@/services/notificationService"
 
 export function useNotifications() {
   const queryClient = useQueryClient()
 
   const notificationsQuery = useQuery({
-    queryKey: ["notifications"],
+    queryKey: queryKeys.notifications.all,
     queryFn: notificationService.list,
     refetchInterval: 30_000,
   })
@@ -14,7 +15,7 @@ export function useNotifications() {
   const markAsReadMutation = useMutation({
     mutationFn: (id: string) => notificationService.markAsRead(id),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["notifications"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all })
     },
   })
 

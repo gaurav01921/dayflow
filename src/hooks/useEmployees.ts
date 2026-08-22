@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
+import { queryKeys } from "@/hooks/queryKeys"
 import { employeeService } from "@/services/employeeService"
 import type { EmployeeUpdate } from "@/types/api"
 
 export function useEmployees() {
   const employeesQuery = useQuery({
-    queryKey: ["employees"],
+    queryKey: queryKeys.employees.all,
     queryFn: () => employeeService.list(),
   })
 
@@ -22,7 +23,7 @@ export function useEmployeeProfile(id?: string) {
   const queryClient = useQueryClient()
 
   const profileQuery = useQuery({
-    queryKey: ["employees", id ?? "me"],
+    queryKey: queryKeys.employees.detail(id),
     queryFn: () => employeeService.get(id),
   })
 
@@ -30,7 +31,7 @@ export function useEmployeeProfile(id?: string) {
     mutationFn: ({ targetId, patch }: { targetId: string; patch: EmployeeUpdate }) =>
       employeeService.update(targetId, patch),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["employees"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.employees.all })
     },
   })
 
