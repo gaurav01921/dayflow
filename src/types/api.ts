@@ -16,6 +16,7 @@ export interface User {
   email: string
   role: UserRole
   emailVerified: boolean
+  mustChangePassword?: boolean
 }
 
 export interface UserWithPassword extends User {
@@ -174,4 +175,28 @@ export interface LoginInput {
 export interface VerifyEmailInput {
   email: string
   code: string
+}
+
+export interface ChangePasswordInput {
+  temporaryPassword: string
+  newPassword: string
+}
+
+export interface CreateEmployeeInput {
+  companyName?: string
+  firstName: string
+  lastName: string
+  email: string
+  phone?: string
+  department: string
+  position: string
+  role: UserRole
+  employmentType: EmploymentType
+}
+
+export interface CreateEmployeeResult {
+  employee: Employee
+  user: User
+  loginId: string
+  temporaryPassword: string
 }

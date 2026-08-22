@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
-import { Users, Search, Briefcase } from "lucide-react"
+import { Users, Search, Briefcase, UserPlus } from "lucide-react"
 
 import { PageHeader } from "@/components/shared/page-header"
 import { StatusPill } from "@/components/shared/status-pill"
@@ -18,6 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { CreateEmployeeDialog } from "@/features/admin/create-employee-dialog"
 import { employeeService } from "@/services/employeeService"
 import { attendanceService } from "@/services/attendanceService"
 import { formatDate, toISODate } from "@/lib/utils"
@@ -26,6 +27,7 @@ import type { Employee } from "@/types/api"
 export function HrEmployeesPage() {
   const [search, setSearch] = useState("")
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
+  const [createDialogOpen, setCreateDialogOpen] = useState(false)
 
   const {
     data: employees = [],
@@ -67,6 +69,11 @@ export function HrEmployeesPage() {
       <PageHeader
         title="Employees"
         description={`${employees.length} team member${employees.length !== 1 ? "s" : ""} in the organization.`}
+        actions={
+          <Button onClick={() => setCreateDialogOpen(true)} className="gap-2">
+            <UserPlus className="size-4" /> Create Employee
+          </Button>
+        }
       />
 
       {/* Search */}
@@ -188,6 +195,8 @@ export function HrEmployeesPage() {
           ) : null}
         </DialogContent>
       </Dialog>
+
+      <CreateEmployeeDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
     </>
   )
 }

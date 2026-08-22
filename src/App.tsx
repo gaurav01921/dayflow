@@ -4,6 +4,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom"
 import { Toaster } from "sonner"
 
 import { AppShell } from "@/components/layout/app-shell"
+import { ChangePasswordPage } from "@/pages/auth/change-password-page"
 import { LoginPage } from "@/pages/auth/login-page"
 import { SignupPage } from "@/pages/auth/signup-page"
 import { VerifyEmailPage } from "@/pages/auth/verify-email-page"
@@ -35,12 +36,16 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
   if (!user) {
     return <Navigate to="/login" replace />
   }
+  if (user.mustChangePassword) {
+    return <Navigate to="/change-password" replace />
+  }
   return <>{children}</>
 }
 
 function RoleHomeRedirect() {
   const user = useAuthStore((s) => s.user)
   if (!user) return <Navigate to="/login" replace />
+  if (user.mustChangePassword) return <Navigate to="/change-password" replace />
   return <Navigate to={isManagerRole(user.role) ? "/hr/dashboard" : "/employee/dashboard"} replace />
 }
 
@@ -54,6 +59,7 @@ export function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/verify-email" element={<VerifyEmailPage />} />
+          <Route path="/change-password" element={<ChangePasswordPage />} />
 
           {/* Root Redirect */}
           <Route path="/" element={<RoleHomeRedirect />} />

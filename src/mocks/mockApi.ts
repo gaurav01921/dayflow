@@ -27,6 +27,9 @@ import type {
   SignUpInput,
   User,
   VerifyEmailInput,
+  ChangePasswordInput,
+  CreateEmployeeInput,
+  CreateEmployeeResult,
 } from "@/types/api"
 
 interface Session {
@@ -77,6 +80,7 @@ function publicUser(userId: string): User {
     email: u.email,
     role: u.role,
     emailVerified: u.emailVerified,
+    mustChangePassword: u.mustChangePassword ?? false,
   }
 }
 
@@ -139,11 +143,12 @@ export const mockApi = {
   },
 
   async login(input: LoginInput): Promise<AuthResponse> {
+    const query = input.email.trim().toLowerCase()
     const found = mockDb.users.find(
-      (u) => u.email.toLowerCase() === input.email.toLowerCase()
+      (u) => u.email.toLowerCase() === query || u.employeeCode.toLowerCase() === query
     )
     if (!found || found.password !== input.password) {
-      throw new ApiError("Incorrect email or password.", "INVALID_CREDENTIALS")
+      throw new ApiError("Incorrect Login ID / email or password.", "INVALID_CREDENTIALS")
     }
     if (!found.emailVerified) {
       throw new ApiError(
@@ -153,6 +158,81 @@ export const mockApi = {
     }
     session = { userId: found.id }
     return delay({ token: makeToken(found.id), user: publicUser(found.id) })
+  },
+
+  async createEmployee(input: CreateEmployeeInput): Promise<CreateEmployeeResult> {
+    requireManager()
+    if (mockDb.users.some((u) => u.email.toLowerCase() === input.email.toLowerCase())) {
+      throw new ApiError("An account with this email already exists.", "EMAIL_EXISTS")
+    }
+
+    // Generate Login ID: Org/Company prefix + Initials + Year + Serial Counter
+    const companyPrefix = (input.companyName ?? "DAYFLOW")
+      .replace(/[^a-zA-Z]/g, "")
+      .slice(0, 3)
+      .toUpperCase() || "DFS"
+    const initials = `${input.firstName[0] ?? "E"}${input.lastName[0] ?? "M"}`.toUpperCase()
+    const year = new Date().getFullYear()
+    const serialNum = String(mockDb.employees.length + 1).padStart(4, "0")
+    const loginId = `${companyPrefix}${initials}${year}${serialNum}`
+
+    // Generate 8-character random temporary password
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789"
+    let tempPass = ""
+    for (let i = 0; i < 8; i++) {
+      tempPass += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
+
+    const id = nextId("usr")
+    const newUser = {
+      id,
+      employeeCode: loginId,
+      email: input.email,
+      role: input.role,
+      emailVerified: true, // Created by HR -> verified
+      mustChangePassword: true,
+      password: tempPass,
+    }
+    mockDb.users.push(newUser)
+
+    const newEmp: Employee = {
+      id,
+      employeeCode: loginId,
+      firstName: input.firstName,
+      lastName: input.lastName,
+      email: input.email,
+      phone: input.phone ?? "",
+      role: input.role,
+      department: input.department,
+      position: input.position,
+      employmentType: input.employmentType,
+      joinDate: toISODate(new Date()),
+      address: "",
+      documents: [],
+    }
+    mockDb.employees.push(newEmp)
+
+    return delay({
+      employee: newEmp,
+      user: publicUser(id),
+      loginId,
+      temporaryPassword: tempPass,
+    })
+  },
+
+  async changePassword(input: ChangePasswordInput): Promise<{ user: User }> {
+    const me = currentUser()
+    const found = mockDb.users.find((u) => u.id === me.id)
+    if (!found) throw new ApiError("Account not found.", "NOT_FOUND")
+
+    if (found.password !== input.temporaryPassword) {
+      throw new ApiError("Current / temporary password does not match.", "INVALID_CREDENTIALS")
+    }
+
+    found.password = input.newPassword
+    found.mustChangePassword = false
+
+    return delay({ user: publicUser(found.id) })
   },
 
   async verifyEmail(input: VerifyEmailInput): Promise<{ user: User }> {
